@@ -1,0 +1,163 @@
+<AppScreenManager>:
+    canvas.before:
+        Rectangle:
+            source: "..\\data\\background.png"
+            pos: self.pos
+            size: self.size
+
+
+<ScreenBox@MDGridLayout>:
+    cols: 1
+    padding: [self.size[0]*.02, ]
+    spacing: self.size[0]*.04
+    
+
+<ParentScreen>:
+    radius: [25, 0, 0, 0]
+    md_bg_color: 0, 0, 0, 0
+
+
+<ParentArea>:
+    cols: 1
+    height: self.minimum_height
+    size_hint_y: None
+    padding: [self.parent.width*.03, self.parent.height*.03,]
+    spacing: self.parent.height*.02
+
+
+<AreaScroll@ScrollView>:
+    canvas.before:
+        Color:
+            rgba: 1, 1, 1, .6
+        
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [self.parent.height*.02]
+
+
+<MainArea>:
+<SettingsArea>:
+<FileSettingsArea>:
+<FileWriteArea>:
+<FileViewArea>:
+
+
+<Nav@BoxLayout>:
+    orientation: 'horizontal'
+    size_hint_y: .08
+    canvas.before:
+        Color: 
+            rgba: 1, 1, 1, .6
+
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [self.parent.height*.02]
+
+
+<NavItem@MDIconButton>:
+    pos_hint: {"center_x": .5, "center_y": .5}
+    user_font_size: "32sp"
+
+
+<TunedTextInput@TextInput>:
+    line_height: self.height
+    multiline: False    
+    pos: self.parent.pos
+    size_hint: 1 , 1
+    color: (0, 0, 0, 1)
+    text_size: self.size
+    font_size: "20sp"
+    valign: 'center'
+    background_normal: ''
+    background_active: ''
+    background_color: (0, 0, 0, 0)
+    cursor_color: (.4, .4, .4, 1)
+    cursor_width: 2
+
+
+<SimpleTextInput@FloatLayout>:
+    size_hint_y: None
+    height: self.parent.parent.parent.height*.065
+
+    canvas.before:
+        Color: 
+            rgba: 1, 1, 1, 1
+
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [self.height*.2]
+    
+    TunedTextInput:
+    
+
+
+#
+# Main Screen
+#
+<MainScreen>:
+    ScreenBox:
+        AreaScroll:
+            MainArea:
+                size_hint: 1, 1
+                # AAAAAAAAAAAAAAAAA Amazing feature
+                ScatterLayout:
+                    Image:
+                        source: "..\\data\\logo.png"
+
+        Nav:
+            FloatLayout:
+                NavItem: 
+                    name: 'Create'
+                    icon: "plus-circle"
+                    on_release: root.redirect(self)
+
+            FloatLayout:
+                NavItem: 
+                    name: 'Update'
+                    icon: "folder-outline"
+                    on_release: root.open_file(self)
+
+            FloatLayout:
+                NavItem:
+                    name: 'View' 
+                    icon: "view-list"
+                    on_release: root.redirect(self)
+
+            FloatLayout:
+                NavItem:
+                    name: 'Settings' 
+                    icon: "settings" 
+                    on_release: root.redirect(self)          
+#
+# Settings Screen
+#                   
+<SettingsScreen>:
+    ScreenBox:
+        AreaScroll:
+            SettingsArea:
+                MDLabel:
+                    padding: [5, 0]
+                    size_hint_y: None
+                    height: self.font_size
+                    text: 'Название организации:'
+                    font_size: '22sp'
+                
+                SimpleTextInput:
+
+            
+ 
+        Nav:
+            FloatLayout:
+                NavItem: 
+                    name: 'Main'
+                    icon: "content-save"
+                    on_release: root.save_settings(self)
+
+            FloatLayout:
+                NavItem:
+                    name: 'Main' 
+                    icon: "home" 
+                    on_release: root.redirect(self)         
