@@ -1,28 +1,34 @@
+#
+# Screens
+#
 <AppScreenManager>:
     canvas.before:
         Rectangle:
-            source: "..\\data\\background.png"
+            source: "background.png"
             pos: self.pos
             size: self.size
 
 
 <ScreenBox@MDGridLayout>:
     cols: 1
-    padding: [self.size[0]*.02, ]
-    spacing: self.size[0]*.04
+    padding: ["8sp", "15sp"]
+    spacing: "15sp"
     
 
 <ParentScreen>:
     radius: [25, 0, 0, 0]
     md_bg_color: 0, 0, 0, 0
 
-
+    
+#
+# Areas
+#
 <ParentArea>:
     cols: 1
     height: self.minimum_height
     size_hint_y: None
-    padding: [self.parent.width*.03, self.parent.height*.03,]
-    spacing: self.parent.height*.02
+    padding: ["8sp", "15sp"]
+    spacing: "12sp"
 
 
 <AreaScroll@ScrollView>:
@@ -41,8 +47,172 @@
 <FileSettingsArea>:
 <FileWriteArea>:
 <FileViewArea>:
+#
+# Area's items
+#
+<SimpleLabel@MDLabel>:
+    padding: [5, 0]
+    size_hint_y: None
+    height: self.font_size
+    font_size: '22sp'
 
 
+<TunedTextInput@TextInput>:
+    line_height: self.height
+    multiline: False    
+    pos: self.parent.pos
+    padding: [15, self.height//4-self.font_size//8]
+    size_hint: 1 , 1
+    color: (0, 0, 0, 1)
+    text_size: self.size
+    font_size: "20sp"
+    background_normal: ''
+    background_active: ''
+    background_color: (0, 0, 0, 0)
+    cursor_color: (.4, .4, .4, 1)
+    cursor_width: 2
+
+
+<SimpleTextInput@FloatLayout>:
+    size_hint_y: None
+    height: "40sp"
+    hint_text: ''
+    canvas.before:
+        Color: 
+            rgba: 1, 1, 1, 1
+
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [self.height*.2]
+    
+    TunedTextInput:
+        hint_text: root.hint_text
+
+#
+# Custom Expansion Panel
+#
+<ExpsList>:
+    cols: 1
+    adaptive_height: True
+    spacing: "10sp"
+
+
+<ExpPanel>:
+    cols: 2
+    adaptive_height: True
+
+
+<ExpPanelBox>:
+    rad: 10
+    cols: 1
+    adaptive_height: True
+    
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, .2
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [self.rad]
+
+
+<ExpPanelItemsList>:
+    cols: 1
+    adaptive_height: True
+    spacing: "10sp"
+    padding: [0, "10sp", 0, 0] if self.height > 10 else [0, ]
+
+
+<ExpButton@MDIconButton>:
+    user_font_size: "24sp"
+    theme_text_color: "Custom"
+    text_color: (.4, .4, .4, 1)
+
+
+<ExpPanelAddButton>:
+    anchor_x: 'center'
+    size_hint_y: None
+    height: "40sp"
+
+    ExpButton:
+        icon: "plus-circle"
+        on_release: root.parent.children[1].add_item()
+ 
+
+<ExpRightButton>
+    anchor_y: "top"
+    size_hint_x: None
+    width: self.children[0].width
+
+    ExpButton:
+        icon: "minus-circle"
+        height: "40sp"
+        on_release: root.parent.parent.del_exp(self)
+
+
+<ExpPanelFirstItem>:
+    cols: 2
+    size_hint_y: None
+    height: "40sp"
+
+    canvas.before:
+        Color: 
+            rgba: 1, 1, 1, 1
+
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size 
+            radius: [self.height*.2] 
+    
+    TunedTextInput:
+        hint_text: "Курс (класс)"
+            
+    ExpArrow:
+
+
+<ExpPanelItem>:
+    cols: 2
+    size_hint_y: None
+    height: "40sp"
+   
+    ExpPanelInput:
+        ExpButton:
+            icon: "pencil"
+            height: "40sp"
+     
+    ExpButton:
+        icon: "minus-circle"
+        height: "40sp"
+        on_release: root.parent.del_item(root)
+
+
+<ExpArrow@MDIconButton>:
+    icon: "menu-right"
+    theme_text_color: "Custom"
+    text_color: (.4, .4, .4, 1)
+    height: "40sp"
+    on_release: self.parent.parent.parent.change_state()
+
+
+<ExpPanelInput@GridLayout>:
+    size_hint_y: None
+    height: "40sp"
+    cols: 2
+
+    canvas.before:
+        Color: 
+            rgba: 1, 1, 1, 1
+
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size 
+            radius: [self.height*.2] 
+    
+    TunedTextInput:
+#
+# Navs
+# 
 <Nav@BoxLayout>:
     orientation: 'horizontal'
     size_hint_y: .08
@@ -61,39 +231,6 @@
     user_font_size: "32sp"
 
 
-<TunedTextInput@TextInput>:
-    line_height: self.height
-    multiline: False    
-    pos: self.parent.pos
-    size_hint: 1 , 1
-    color: (0, 0, 0, 1)
-    text_size: self.size
-    font_size: "20sp"
-    valign: 'center'
-    background_normal: ''
-    background_active: ''
-    background_color: (0, 0, 0, 0)
-    cursor_color: (.4, .4, .4, 1)
-    cursor_width: 2
-
-
-<SimpleTextInput@FloatLayout>:
-    size_hint_y: None
-    height: self.parent.parent.parent.height*.065
-
-    canvas.before:
-        Color: 
-            rgba: 1, 1, 1, 1
-
-        RoundedRectangle:
-            pos: self.pos
-            size: self.size
-            radius: [self.height*.2]
-    
-    TunedTextInput:
-    
-
-
 #
 # Main Screen
 #
@@ -105,7 +242,7 @@
                 # AAAAAAAAAAAAAAAAA Amazing feature
                 ScatterLayout:
                     Image:
-                        source: "..\\data\\logo.png"
+                        source: "logo.png"
 
         Nav:
             FloatLayout:
@@ -129,8 +266,10 @@
             FloatLayout:
                 NavItem:
                     name: 'Settings' 
-                    icon: "settings" 
+                    icon: "cog" 
                     on_release: root.redirect(self)          
+
+
 #
 # Settings Screen
 #                   
@@ -138,17 +277,57 @@
     ScreenBox:
         AreaScroll:
             SettingsArea:
-                MDLabel:
-                    padding: [5, 0]
-                    size_hint_y: None
-                    height: self.font_size
+                SimpleLabel:
                     text: 'Название организации:'
-                    font_size: '22sp'
-                
+                    
                 SimpleTextInput:
+                    id: school_name
+                    hint_text: 'Название организации'
 
-            
- 
+                SimpleLabel:
+                    text: 'Преподаватель:'
+
+                MDGridLayout:
+                    cols: 1
+                    spacing: "12sp"
+                    adaptive_height: True
+                    canvas.before:
+                        Color:
+                            rgba: 0, 0, 0, .2
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [self.height*.2]
+                    
+                    SimpleTextInput:
+                        id: teacher_name
+                        hint_text: 'ФИО'
+
+                    SimpleTextInput:
+                        id: teacher_rank
+                        hint_text: 'Звание'
+
+                    SimpleTextInput:
+                        id: teacher_post
+                        hint_text: 'Должность'
+                
+                SimpleLabel:
+                    text: 'Курсы:'
+
+                ExpsList:
+                    id: exp_list
+                    ExpPanel:
+
+                AnchorLayout:
+                    anchor_x: "center"
+                    size_hint_y: None
+                    height: "40sp"
+
+                    ExpButton:
+                        icon: "plus-circle"
+                        on_release: root.ids.exp_list.add_exp()
+
+                        
         Nav:
             FloatLayout:
                 NavItem: 

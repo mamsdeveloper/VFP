@@ -1,0 +1,158 @@
+BoxLayout:
+    padding: [20, ]
+    size_hint: 1, 1
+    orientation: 'vertical'
+    canvas.before:
+        Color:
+            rgba: (1, 1, 1, .4)
+        Rectangle:
+            source: "background.png"
+            pos: self.pos
+            size: self.size
+  
+    MDGridLayout:
+        cols: 1
+        adaptive_height: True
+        spacing: [root.height*.02]
+        
+        ExpPanel:
+    
+    MDIconButton:
+        on_release: app.add_exp()
+
+
+<ExpPanel>:
+    cols: 2
+    adaptive_height: True
+
+
+<ExpPanelBox>:
+    rad: 10
+    cols: 1
+    adaptive_height: True
+    
+    canvas.before:
+        Color:
+            rgba: 0, 0, 0, .2
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [self.rad]
+
+
+<ExpPanelItemsList>:
+    cols: 1
+    adaptive_height: True
+    spacing: "10sp"
+    padding: [0, "10sp", 0, 0] if self.height > 10 else [0, ]
+
+
+<ExpPanelAddButton>:
+    anchor_x: 'center'
+    size_hint_y: None
+    height: "40sp"
+
+    MDIconButton:
+        icon: "plus-circle"
+        theme_text_color: "Custom"
+        text_color: (.4, .4, .4, 1)
+        on_release: root.parent.children[1].add_item()
+ 
+
+<ExpRightButton>
+    anchor_y: "top"
+    size_hint_x: None
+    width: self.children[0].width
+
+    MDIconButton:
+        icon: "minus-circle"
+        height: "40sp"
+        theme_text_color: "Custom"
+        text_color: (.4, .4, .4, 1)
+        on_release: app.del_exp(self)
+
+
+<ExpPanelFirstItem>:
+    cols: 2
+    size_hint_y: None
+    height: "40sp"
+
+    canvas.before:
+        Color: 
+            rgba: 1, 1, 1, 1
+
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size 
+            radius: [self.height*.2] 
+    
+    TunedTextInput:
+        hint_text: "Курс (класс)"
+            
+    ExpArrow:
+
+
+<ExpPanelItem>:
+    cols: 2
+    size_hint_y: None
+    height: "40sp"
+   
+    ExpPanelInput:
+        MDIconButton:
+            icon: "pencil"
+            height: "40sp"
+            theme_text_color: "Custom"
+            text_color: (.4, .4, .4, 1)
+     
+    MDIconButton:
+        icon: "minus-circle"
+        height: "40sp"
+        theme_text_color: "Custom"
+        text_color: (.4, .4, .4, 1)
+        on_release: root.parent.del_item(root)
+
+
+<ExpArrow@MDIconButton>:
+    icon: "menu-right"
+    theme_text_color: "Custom"
+    text_color: (.4, .4, .4, 1)
+    height: "40sp"
+    on_release: self.parent.parent.parent.change_state()
+
+
+<TunedTextInput@TextInput>:
+    line_height: self.height
+    multiline: False    
+    pos: self.parent.pos
+    padding: [15, self.height//4-self.font_size//8]
+    size_hint: 1 , 1
+    color: (0, 0, 0, 1)
+    text_size: self.size
+    font_size: "20sp"
+    background_normal: ""
+    background_active: ""
+    background_color: (0, 0, 0, 0)
+    cursor_color: (.4, .4, .4, 1)
+    cursor_width: 2
+
+
+<ExpPanelInput@GridLayout>:
+    size_hint_y: None
+    height: "40sp"
+    cols: 2
+
+    canvas.before:
+        Color: 
+            rgba: 1, 1, 1, 1
+
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size 
+            radius: [self.height*.2] 
+    
+    TunedTextInput:
+    
+
+
+
+        
