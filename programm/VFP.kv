@@ -32,6 +32,7 @@
 
 
 <AreaScroll@ScrollView>:
+    bar_width: 0
     canvas.before:
         Color:
             rgba: 1, 1, 1, .6
@@ -44,6 +45,7 @@
 
 <MainArea>:
 <SettingsArea>:
+<ClassArea>:
 <FileSettingsArea>:
 <FileWriteArea>:
 <FileViewArea>:
@@ -77,6 +79,8 @@
     size_hint_y: None
     height: "40sp"
     hint_text: ''
+    text: ''
+
     canvas.before:
         Color: 
             rgba: 1, 1, 1, 1
@@ -87,7 +91,29 @@
             radius: [self.height*.2]
     
     TunedTextInput:
-        hint_text: root.hint_text
+        hint_text: self.parent.hint_text
+        text: root.text
+
+<StudentsList>:
+    cols: 1
+    height: 0
+    adaptive_height: True
+    spacing: "10sp"
+
+
+<StudentItem>:
+    cols: 2
+    size_hint_y: None
+    height: "40sp"
+    text: ''
+
+    SimpleTextInput:
+        hint_text: "ФИО"
+        text: root.text
+
+    ExpButton:
+        icon: "minus-circle"
+        on_release: root.parent.del_student(root)
 
 #
 # Custom Expansion Panel
@@ -95,6 +121,7 @@
 <ExpsList>:
     cols: 1
     adaptive_height: True
+    height: 0
     spacing: "10sp"
 
 
@@ -104,7 +131,7 @@
 
 
 <ExpPanelBox>:
-    rad: 10
+    rad: 40
     cols: 1
     adaptive_height: True
     
@@ -128,6 +155,8 @@
     user_font_size: "24sp"
     theme_text_color: "Custom"
     text_color: (.4, .4, .4, 1)
+    height: "40sp"
+    width: "45sp"
 
 
 <ExpPanelAddButton>:
@@ -175,11 +204,13 @@
     cols: 2
     size_hint_y: None
     height: "40sp"
+    students: []
    
     ExpPanelInput:
         ExpButton:
             icon: "pencil"
             height: "40sp"
+            on_release: root.update_class(self.parent.children[1])
      
     ExpButton:
         icon: "minus-circle"
@@ -210,6 +241,7 @@
             radius: [self.height*.2] 
     
     TunedTextInput:
+        hint_text: 'Класс'
 #
 # Navs
 # 
@@ -281,7 +313,6 @@
                     text: 'Название организации:'
                     
                 SimpleTextInput:
-                    id: school_name
                     hint_text: 'Название организации'
 
                 SimpleLabel:
@@ -300,22 +331,18 @@
                             radius: [self.height*.2]
                     
                     SimpleTextInput:
-                        id: teacher_name
                         hint_text: 'ФИО'
 
                     SimpleTextInput:
-                        id: teacher_rank
                         hint_text: 'Звание'
 
                     SimpleTextInput:
-                        id: teacher_post
                         hint_text: 'Должность'
                 
                 SimpleLabel:
                     text: 'Курсы:'
 
                 ExpsList:
-                    id: exp_list
                     ExpPanel:
 
                 AnchorLayout:
@@ -325,18 +352,50 @@
 
                     ExpButton:
                         icon: "plus-circle"
-                        on_release: root.ids.exp_list.add_exp()
+                        on_release: root.children[0].children[1].children[0].children[1].add_exp()
 
                         
         Nav:
+            FloatLayout:
+                NavItem:
+                    name: 'Main' 
+                    icon: "home" 
+                    on_release: root.redirect(self) 
+
             FloatLayout:
                 NavItem: 
                     name: 'Main'
                     icon: "content-save"
                     on_release: root.save_settings(self)
 
+                
+#
+# Class Screen
+# 
+<ClassScreen>:
+    students: []
+
+    ScreenBox:
+        AreaScroll:
+            ClassArea:
+                SimpleLabel:
+                    text: root.name
+                
+                StudentsList:
+                
+                AnchorLayout:
+                    anchor_x: "center"
+                    size_hint_y: None
+                    height: "40sp"
+
+                    ExpButton:
+                        icon: "plus-circle"
+                        on_release: self.parent.parent.children[1].add_student()
+
+
+        Nav:
             FloatLayout:
-                NavItem:
-                    name: 'Main' 
-                    icon: "home" 
-                    on_release: root.redirect(self)         
+                NavItem: 
+                    name: 'Settings'
+                    icon: "arrow-left-circle"
+                    on_release: root.redirect(self)

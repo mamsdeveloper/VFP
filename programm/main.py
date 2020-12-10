@@ -11,8 +11,7 @@ from kivymd.app import MDApp
 from kivymd.uix.button import MDIconButton
 from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.screen import MDScreen
-
-from exppanel import ExpPanel
+from config_utils import *
 
 
 #
@@ -25,7 +24,11 @@ class AppScreenManager(ScreenManager):
 # Screen that provide default properties for screens
 class ParentScreen(MDScreen):
     def redirect(self, instance):
-        print('>>>', instance.name)
+        print('>>> Redirect to', instance.name)
+        # create settings
+        if self.name == 'Main' and instance.name == 'Settings':
+            self.parent.screens[-1].apply_config()
+
         # change swipe mod
         swipe_direction(self, instance)
         # change screen
@@ -51,9 +54,96 @@ class ViewScreen(ParentScreen):
 
 
 class SettingsScreen(ParentScreen):
+    # set default settings
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.apply_config()
+
+    # change widgets using config
+
+    def apply_config(self):
+        # get config
+        config = get_config()
+
+        # screen area widgets
+        all_widgets = self.children[0].children[1].children[0]
+
+        # school name
+        all_widgets.children[-2].text = config['school_name']
+
+        # teacher
+        teacher_list = all_widgets.children[-4]
+
+        teacher_list.children[2].text = config['teacher']['name']
+        teacher_list.children[1].text = config['teacher']['rank']
+        teacher_list.children[0].text = config['teacher']['post']
+
+        # groups
+        all_widgets.children[1].clear_widgets()
+
+        for group in config['groups']:
+            # create exp panel
+            exp = ExpPanel()
+
+            # set group name
+            exp.children[1].children[-1].children[1].text = group
+
+            # create items
+            for item in config['groups'][group]:
+                exp_item = ExpPanelItem()  # create
+                exp_item.children[1].children[1].text = item[0]  # set text
+                exp_item.students = item[1]  # set students
+                exp.items_list.add_widget(exp_item)  # add item to items list
+
+            all_widgets.children[1].add_widget(exp)
+
+        del config, all_widgets, teacher_list, exp, exp_item, item
+
     def save_settings(self, instance):
         print('>>> Save settings')
+        save_config(self)
         self.redirect(instance)
+
+
+class ClassScreen(ParentScreen):
+    def __init__(self, instance, students=[], **kwargs):
+        super().__init__(**kwargs)
+        # what item create this screen
+        self.instance = instance
+        # add student in box
+        self.students = students
+        self.student_box = self.children[0].children[1].children[0].children[1]
+
+        # create exist students
+        for student in self.students:
+            self.student_box.add_widget(StudentItem(student))
+
+    # reinit parent method to remove self after redirect and update students list
+
+    def redirect(self, instance):
+        super().redirect(instance)
+        # remove from screen manager
+        self.remove_self()
+
+        # update and give students list
+        self.update_students()
+        self.instance.students = self.students
+
+    # remove self from sm
+
+    def remove_self(self):
+        self.parent.remove_widget(self)
+
+    # get students names
+
+    def update_students(self):
+        self.students = []
+        for item in self.student_box.children:
+            # validate
+            if item.children[1].children[0].text:
+                self.students.append(item.children[1].children[0].text)
+
+        self.students.sort()
 
 
 # Changing direction of Screen's swipe
@@ -76,6 +166,10 @@ class MainArea(ParentArea):
 
 
 class SettingsArea(ParentArea):
+    pass
+
+
+class ClassArea(ParentArea):
     pass
 
 
@@ -146,18 +240,13 @@ class ExpPanel(MDGridLayout):
 
 
 class ExpPanelBox(MDGridLayout):
-    pass
+    def on_children(self, none, children):
+        self.rad = children[0].height*.2
 
 
 class ExpPanelItemsList(MDGridLayout):
-    def on_children(self, a, b):
-        try:
-            self.rad = b[0].height*.2
-        except:
-            pass
-
     def add_item(self):
-        self.add_widget(ExpPanelItem('Класс'))
+        self.add_widget(ExpPanelItem())
 
     def del_item(self, instance):
         self.remove_widget(instance)
@@ -176,12 +265,33 @@ class ExpPanelAddButton(AnchorLayout):
 
 
 class ExpPanelItem(GridLayout):
-    def __init__(self, placeholder=None, **kwargs):
-        super().__init__(**kwargs)
-        self.placeholder = placeholder
+    def update_class(self, instance):
+        # create class screen
+        self.class_scr = ClassScreen(self, self.students, name=instance.text)
+        # add screen in screen manager
+        sm = self.parent.parent.parent.parent.parent.parent.parent.parent.parent
+        sm.add_widget(self.class_scr)
+        sm.transition.direction = 'left'
+        sm.current = instance.text
 
-    def on_children(self, a, b):
-        b[0].hint_text = 'Класс'
+        del sm
+
+
+#
+# Area's items
+#
+class StudentsList(MDGridLayout):
+    def add_student(self):
+        self.add_widget(StudentItem())
+
+    def del_student(self, instance):
+        self.remove_widget(instance)
+
+
+class StudentItem(GridLayout):
+    def __init__(self, text='', **kwargs):
+        super().__init__(**kwargs)
+        self.text = text
 
 
 #
@@ -207,15 +317,17 @@ class VFP(MDApp):
         sm.add_widget(self.view_scr)
         sm.add_widget(self.settings_scr)
 
-        sm.current = 'Settings'
+        sm.current = 'Main'
 
         return sm  # return screen manager
 
-
 # Running application
+
+
 def main():
-    Clock.max_iteration = 30
-    VFP().run()
+    Clock.max_iteration = 1000
+    app = VFP()
+    app.run()
 
 
 if __name__ == '__main__':
