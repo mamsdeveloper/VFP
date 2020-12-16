@@ -9,12 +9,14 @@
             size: self.size
 
 
+#@@@@@@@
 <ScreenBox@MDGridLayout>:
     cols: 1
     padding: ["8sp", "15sp"]
     spacing: "15sp"
     
 
+#@@@@@@@
 <ParentScreen>:
     radius: [25, 0, 0, 0]
     md_bg_color: 0, 0, 0, 0
@@ -31,60 +33,176 @@
     spacing: "12sp"
 
 
+#@@@@@@@
 <AreaScroll@ScrollView>:
     bar_width: 0
     canvas.before:
         Color:
             rgba: 1, 1, 1, .6
-        
         RoundedRectangle:
             pos: self.pos
             size: self.size
             radius: [self.parent.height*.02]
 
 
+#@@@@@@@
 <MainArea>:
+    size_hint: 1, 1
+    # AAAAAAAAAAAAAAAAA Amazing feature
+    ScatterLayout:
+        Image:
+            source: "logo.png"
+
+
+#@@@@@@@
 <SettingsArea>:
+    SimpleLabel:
+        text: "Название организации:"
+        
+    SimpleTextInput:
+        hint_text: "Название организации"
+        
+    SimpleLabel:
+        text: "Преподаватель:"
+
+    MDGridLayout:
+        cols: 1
+        spacing: "12sp"
+        adaptive_height: True
+        canvas.before:
+            Color:
+                rgba: 0, 0, 0, .2
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [self.height*.2]
+        
+        SimpleTextInput:
+            hint_text: "ФИО"
+
+        SimpleTextInput:
+            hint_text: "Звание"
+
+        SimpleTextInput:
+            hint_text: "Должность"
+    
+    SimpleLabel:
+        text: "Курсы:"
+
+    ExpsList:
+        ExpPanel:
+
+    AnchorLayout:
+        anchor_x: "center"
+        size_hint_y: None
+        height: "40sp"
+
+        SubButton:
+            icon: "plus-circle"
+            on_release: root.parent.parent.parent.children[0].children[1].children[0].children[1].add_exp()
+
+
+#@@@@@@@
 <ClassArea>:
+    SimpleLabel:
+        text: root.parent.parent.parent.name
+    
+    StudentsList:
+    
+    AnchorLayout:
+        anchor_x: "center"
+        size_hint_y: None
+        height: "40sp"
+
+        SubButton:
+            icon: "plus-circle"
+            on_release: self.parent.parent.children[1].add_student()
+
+
+# area with file settings as school name, teacher and other
 <FileSettingsArea>:
+    SimpleLabel:
+        text: "Название организации:"
+        
+    SimpleTextInput:
+        hint_text: "Название организации"
+
+    SimpleLabel:
+        text: "Преподаватель:"
+
+    MDGridLayout:
+        cols: 1
+        spacing: "12sp"
+        adaptive_height: True
+        canvas.before:
+            Color:
+                rgba: 0, 0, 0, .2
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [self.height*.2]
+        
+        SimpleTextInput:
+            hint_text: "ФИО"
+
+        SimpleTextInput:
+            hint_text: "Звание"
+
+        SimpleTextInput:
+            hint_text: "Должность"
+
+    SimpleLabel:
+        text: "Класс:"
+
+    DropInput:
+    
+
+#@@@@@@@
 <FileWriteArea>:
+    SimpleLabel:
+        text: "Write class marks"
+
+
+#@@@@@@@
 <FileViewArea>:
 #
-# Area's items
+# Area"s items
 #
 <SimpleLabel@MDLabel>:
-    padding: [5, 0]
+    padding: ["5sp", 0]
     size_hint_y: None
     height: self.font_size
-    font_size: '22sp'
+    font_size: "22sp"
 
 
+#@@@@@@@
 <TunedTextInput@TextInput>:
     line_height: self.height
     multiline: False    
     pos: self.parent.pos
-    padding: [15, self.height//4-self.font_size//8]
-    size_hint: 1 , 1
+    padding: ["8sp", self.height//4-self.font_size//8]
+    size_hint: 0.95, 1
     color: (0, 0, 0, 1)
     text_size: self.size
     font_size: "20sp"
-    background_normal: ''
-    background_active: ''
+    background_normal: ""
+    background_active: ""
     background_color: (0, 0, 0, 0)
     cursor_color: (.4, .4, .4, 1)
     cursor_width: 2
+    on_text: self.parent.text = self.text
 
 
+#@@@@@@@
 <SimpleTextInput@FloatLayout>:
     size_hint_y: None
     height: "40sp"
-    hint_text: ''
-    text: ''
+    hint_text: ""
+    text: ""
 
     canvas.before:
         Color: 
             rgba: 1, 1, 1, 1
-
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -94,6 +212,8 @@
         hint_text: self.parent.hint_text
         text: root.text
 
+
+#@@@@@@@
 <StudentsList>:
     cols: 1
     height: 0
@@ -101,19 +221,37 @@
     spacing: "10sp"
 
 
+#@@@@@@@
 <StudentItem>:
     cols: 2
     size_hint_y: None
     height: "40sp"
-    text: ''
+    text: ""
 
     SimpleTextInput:
         hint_text: "ФИО"
         text: root.text
 
-    ExpButton:
+    SubButton:
         icon: "minus-circle"
         on_release: root.parent.del_student(root)
+
+
+<SubButton@MDIconButton>:
+    user_font_size: "24sp"
+    theme_text_color: "Custom"
+    text_color: (.4, .4, .4, 1)
+    height: "40sp"
+    width: "45sp"
+
+
+#@@@@@@@
+<ArrowButton@MDIconButton>:
+    icon: "menu-right"
+    theme_text_color: "Custom"
+    text_color: (.4, .4, .4, 1)
+    height: "40sp"
+
 
 #
 # Custom Expansion Panel
@@ -125,16 +263,17 @@
     spacing: "10sp"
 
 
+#@@@@@@@
 <ExpPanel>:
     cols: 2
     adaptive_height: True
 
 
+#@@@@@@@
 <ExpPanelBox>:
     rad: 40
     cols: 1
     adaptive_height: True
-    
     canvas.before:
         Color:
             rgba: 0, 0, 0, .2
@@ -144,6 +283,7 @@
             radius: [self.rad]
 
 
+#@@@@@@@
 <ExpPanelItemsList>:
     cols: 1
     adaptive_height: True
@@ -151,44 +291,38 @@
     padding: [0, "10sp", 0, 0] if self.height > 10 else [0, ]
 
 
-<ExpButton@MDIconButton>:
-    user_font_size: "24sp"
-    theme_text_color: "Custom"
-    text_color: (.4, .4, .4, 1)
-    height: "40sp"
-    width: "45sp"
-
-
+#@@@@@@@
 <ExpPanelAddButton>:
-    anchor_x: 'center'
+    anchor_x: "center"
     size_hint_y: None
     height: "40sp"
 
-    ExpButton:
+    SubButton:
         icon: "plus-circle"
         on_release: root.parent.children[1].add_item()
  
 
+#@@@@@@@
 <ExpRightButton>
     anchor_y: "top"
     size_hint_x: None
     width: self.children[0].width
 
-    ExpButton:
+    SubButton:
         icon: "minus-circle"
         height: "40sp"
         on_release: root.parent.parent.del_exp(self)
 
 
+#@@@@@@@
 <ExpPanelFirstItem>:
     cols: 2
     size_hint_y: None
     height: "40sp"
-
+    text: ""
     canvas.before:
         Color: 
             rgba: 1, 1, 1, 1
-
         RoundedRectangle:
             pos: self.pos
             size: self.size 
@@ -200,6 +334,7 @@
     ExpArrow:
 
 
+#@@@@@@@
 <ExpPanelItem>:
     cols: 2
     size_hint_y: None
@@ -207,62 +342,176 @@
     students: []
    
     ExpPanelInput:
-        ExpButton:
+        SubButton:
             icon: "pencil"
             height: "40sp"
-            on_release: root.update_class(self.parent.children[1])
+            on_release: 
+                print(root.students) 
+                root.update_class(self.parent.children[1])
      
-    ExpButton:
+    SubButton:
         icon: "minus-circle"
         height: "40sp"
         on_release: root.parent.del_item(root)
 
 
-<ExpArrow@MDIconButton>:
-    icon: "menu-right"
-    theme_text_color: "Custom"
-    text_color: (.4, .4, .4, 1)
-    height: "40sp"
+#@@@@@@@
+<ExpArrow@ArrowButton>:
     on_release: self.parent.parent.parent.change_state()
 
 
+#@@@@@@@
 <ExpPanelInput@GridLayout>:
     size_hint_y: None
     height: "40sp"
     cols: 2
-
+    text: ""
     canvas.before:
         Color: 
             rgba: 1, 1, 1, 1
-
         RoundedRectangle:
             pos: self.pos
             size: self.size 
             radius: [self.height*.2] 
     
     TunedTextInput:
-        hint_text: 'Класс'
+        hint_text: "Класс"
+
+
+#
+# Custom Drop Menu
+#
+<DropInput>:
+    cols: 1
+    adaptive_height: True
+    text: ""
+
+  
+#@@@@@@@
+<DropInputFirstItem>:
+    cols: 2
+    size_hint_y: None
+    height: "40sp"
+    text: ""
+    canvas.before:
+        Color: 
+            rgba: 1, 1, 1, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size 
+            radius: [self.height*.2] 
+    
+    MDLabel:
+        text: "Курс (класс)"
+        theme_text_color: "Custom"
+        text_color: (.4, .4, .4, 1) if self.text == "Курс (класс)" else (0, 0, 0, 1)
+        padding: ["8sp", self.height//4-self.font_size//8]
+        font_size: "20sp"
+     
+    DropArrow:
+
+
+#@@@@@@@
+<DropInputDropArea>:
+    anchor_x: "right"
+    size_hint_y: None
+    height: "180sp"
+
+
+#@@@@@@@ 
+<DropInputScroll>:
+    rad: 40
+    cols: 1
+    bar_width: "5sp"
+    bar_color: (.4, .4, .4, 1)
+    size_hint: None, None
+    height: "180sp"
+    width: self.parent.width*.5 if self.parent else 0
+    canvas.before:
+        Color: 
+            rgba: 0, 0, 0, .2
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size 
+            radius: [0, self.rad, self.rad, self.rad]
+    
+    DropInputItemsList:
+    
+
+#@@@@@@@
+<DropInputItemsList@GridLayout>:
+    cols: 1
+    height: self.minimum_height
+    size_hint_y: None
+    spacing: "10sp"
+    padding: [0, "10sp", 0, 0] 
+
+
+#@@@@@@@
+<DropArrow@ArrowButton>:
+    on_release: self.parent.parent.change_state()
+
+
+#@@@@@@@
+<DropListItem>:
+    name: ""
+    students: []
+    size_hint_y: None
+    height: "35sp"
+    background_normal: ''
+    background_color: (0, 0, 0, 0)
+    canvas.before:
+        Color: 
+            rgba: 1, 1, 1, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [self.height*.2]
+    
+    MDLabel:
+        size_hint: None, None
+        size: root.size
+        pos: root.pos
+        padding: ["5sp", 0]
+        font_size: "18sp"
+        text: root.name
+
+    
 #
 # Navs
 # 
 <Nav@BoxLayout>:
-    orientation: 'horizontal'
+    orientation: "horizontal"
     size_hint_y: .08
     canvas.before:
         Color: 
             rgba: 1, 1, 1, .6
-
         RoundedRectangle:
             pos: self.pos
             size: self.size
             radius: [self.parent.height*.02]
 
 
+#@@@@@@@
 <NavItem@MDIconButton>:
     pos_hint: {"center_x": .5, "center_y": .5}
     user_font_size: "32sp"
 
 
+#@@@@@@@
+<NavSub@FloatLayout>:
+    name: ''
+    canvas.before:
+        Color: 
+            rgba: (1, 1, 1, .6) if self.parent.parent.parent.area == self.name else (0, 0, 0, 0)
+
+        Ellipse:
+            pos: self.center_x-self.height*.7//2, self.center_y-self.height*.7//2
+            size: self.height*.7, self.height*.7
+
+
+#@@@@@@@
+<NavSubEmpty@FloatLayout>:
 #
 # Main Screen
 #
@@ -270,36 +519,81 @@
     ScreenBox:
         AreaScroll:
             MainArea:
-                size_hint: 1, 1
-                # AAAAAAAAAAAAAAAAA Amazing feature
-                ScatterLayout:
-                    Image:
-                        source: "logo.png"
 
         Nav:
             FloatLayout:
                 NavItem: 
-                    name: 'Create'
+                    name: "Create"
                     icon: "plus-circle"
                     on_release: root.redirect(self)
 
             FloatLayout:
                 NavItem: 
-                    name: 'Update'
+                    name: "OpenFile"
                     icon: "folder-outline"
-                    on_release: root.open_file(self)
+                    on_release: root.redirect(self)
 
             FloatLayout:
                 NavItem:
-                    name: 'View' 
+                    name: "View" 
                     icon: "view-list"
                     on_release: root.redirect(self)
 
             FloatLayout:
                 NavItem:
-                    name: 'Settings' 
+                    name: "Settings" 
                     icon: "cog" 
-                    on_release: root.redirect(self)          
+                    on_release: root.redirect(self)        
+
+
+#
+# Create Screen
+#
+<CreateScreen>:
+    area: "SettingsScreen"
+
+    ScreenBox:
+        spacing: 0
+        AreaScroll:  
+
+        # Sub Nav
+        BoxLayout:
+            size_hint_y: None
+            height: "15sp"
+            NavSub:
+                name: "SettingsArea"
+
+            NavSub:
+                name: "WriteArea"
+
+            NavSubEmpty:
+
+            NavSubEmpty:
+
+        Nav:
+            FloatLayout:
+                NavItem: 
+                    name: "SettingsArea"
+                    icon: "wrench"
+                    on_release: root.change_area(self)
+                
+            FloatLayout:
+                NavItem:
+                    name: "WriteArea"
+                    icon: "view-list" 
+                    on_release: root.change_area(self)
+
+            FloatLayout:
+                NavItem:
+                    icon: "content-save" 
+                    on_release: pass
+        
+            FloatLayout:
+                NavItem:
+                    name: "Main"
+                    icon: "home" 
+                    on_release: root.redirect(self)
+
 
 
 #
@@ -309,93 +603,55 @@
     ScreenBox:
         AreaScroll:
             SettingsArea:
-                SimpleLabel:
-                    text: 'Название организации:'
-                    
-                SimpleTextInput:
-                    hint_text: 'Название организации'
-
-                SimpleLabel:
-                    text: 'Преподаватель:'
-
-                MDGridLayout:
-                    cols: 1
-                    spacing: "12sp"
-                    adaptive_height: True
-                    canvas.before:
-                        Color:
-                            rgba: 0, 0, 0, .2
-                        RoundedRectangle:
-                            pos: self.pos
-                            size: self.size
-                            radius: [self.height*.2]
-                    
-                    SimpleTextInput:
-                        hint_text: 'ФИО'
-
-                    SimpleTextInput:
-                        hint_text: 'Звание'
-
-                    SimpleTextInput:
-                        hint_text: 'Должность'
-                
-                SimpleLabel:
-                    text: 'Курсы:'
-
-                ExpsList:
-                    ExpPanel:
-
-                AnchorLayout:
-                    anchor_x: "center"
-                    size_hint_y: None
-                    height: "40sp"
-
-                    ExpButton:
-                        icon: "plus-circle"
-                        on_release: root.children[0].children[1].children[0].children[1].add_exp()
-
-                        
+                          
         Nav:
             FloatLayout:
-                NavItem:
-                    name: 'Main' 
-                    icon: "home" 
-                    on_release: root.redirect(self) 
-
-            FloatLayout:
                 NavItem: 
-                    name: 'Main'
+                    name: "Main"
                     icon: "content-save"
                     on_release: root.save_settings(self)
 
-                
+            FloatLayout:
+                NavItem:
+                    name: "Main" 
+                    icon: "home" 
+                    on_release: root.redirect(self) 
 #
 # Class Screen
 # 
 <ClassScreen>:
     students: []
-
     ScreenBox:
         AreaScroll:
             ClassArea:
-                SimpleLabel:
-                    text: root.name
                 
-                StudentsList:
-                
-                AnchorLayout:
-                    anchor_x: "center"
-                    size_hint_y: None
-                    height: "40sp"
-
-                    ExpButton:
-                        icon: "plus-circle"
-                        on_release: self.parent.parent.children[1].add_student()
-
-
         Nav:
             FloatLayout:
                 NavItem: 
-                    name: 'Settings'
+                    name: "Settings"
                     icon: "arrow-left-circle"
+                    on_release:
+                        root.update_students() 
+                        root.redirect(self)
+                        root.parent.update_settings_students(root.name, root.students)
+                        
+#
+# OpenFileScreen
+#
+<OpenFileScreen>:
+    ScreenBox:
+        AreaScroll:
+            
+        Nav:
+            FloatLayout:
+                NavItem: 
+                    name: "Create"
+                    icon: "check-circle"
+                    on_release: root.choose_file(self)
+
+            FloatLayout:
+                NavItem:
+                    name: "Main" 
+                    icon: "home" 
                     on_release: root.redirect(self)
+

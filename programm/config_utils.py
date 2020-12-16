@@ -15,7 +15,7 @@ def save_config(self):
     all_widgets = self.children[0].children[1].children[0]
 
     # get school name
-    school_name = all_widgets.children[-2].text
+    school_name = self.children[0].children[1].children[0].children[-2].text
 
     # get teacher data
     teacher_list = all_widgets.children[-4]
@@ -91,6 +91,7 @@ def get_config():
             cls = [class_item[0], class_item[1]]
             cls[1] = cls[1].replace("'", '')
             cls[1] = cls[1][1:-1].split(', ')
+            cls[1] = list(filter(lambda student: student!='', cls[1]))
 
             groups[group].append(cls)
 
