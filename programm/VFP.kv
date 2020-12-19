@@ -1,3 +1,4 @@
+#:import platform sys.platform
 #
 # Screens
 #
@@ -29,7 +30,7 @@
     cols: 1
     height: self.minimum_height
     size_hint_y: None
-    padding: ["8sp", "15sp"]
+    padding: ["10sp", "15sp"]
     spacing: "12sp"
 
 
@@ -90,7 +91,7 @@
         text: "Курсы:"
 
     ExpsList:
-        ExpPanel:
+        name: "classes_exps"
 
     AnchorLayout:
         anchor_x: "center"
@@ -99,13 +100,28 @@
 
         SubButton:
             icon: "plus-circle"
-            on_release: root.parent.parent.parent.children[0].children[1].children[0].children[1].add_exp()
+            on_release: root.parent.parent.parent.children[0].children[1].children[0].children[4].add_exp(self)
+
+    SimpleLabel:
+        text: "Упражнения:"
+
+    ExpsList:
+        name: "exercises_exps"
+
+    AnchorLayout:
+        anchor_x: "center"
+        size_hint_y: None
+        height: "40sp"
+
+        SubButton:
+            icon: "plus-circle"
+            on_release: root.parent.parent.parent.children[0].children[1].children[0].children[1].add_exp(self)
 
 
 #@@@@@@@
 <ClassArea>:
     SimpleLabel:
-        text: root.parent.parent.parent.name
+        text: root.parent.parent.parent.title
     
     StudentsList:
     
@@ -118,6 +134,29 @@
             icon: "plus-circle"
             on_release: self.parent.parent.children[1].add_student()
 
+
+#@@@@@@@
+<ExerciseArea>:
+    SimpleLabel:
+        text: root.parent.parent.parent.title
+    
+    SimpleLabel:
+        text: "«5»"
+
+    SimpleTextInput:
+        hint_text: "Отлично"
+    
+    SimpleLabel:
+        text: "«4»"
+
+    SimpleTextInput:
+        hint_text: "Хорошо"
+
+    SimpleLabel:
+        text: "«3»"
+
+    SimpleTextInput:
+        hint_text: "Удоволетворительно"
 
 # area with file settings as school name, teacher and other
 <FileSettingsArea>:
@@ -152,6 +191,16 @@
             hint_text: "Должность"
 
     SimpleLabel:
+        text: 'Упражнения:'
+    
+    GridLayout:
+        cols: 1
+        size_hint_y: None
+        height: self.minimum_height
+        spacing: "10sp"
+        padding: ["5sp", 0]
+
+    SimpleLabel:
         text: "Класс:"
 
     DropInput:
@@ -161,6 +210,9 @@
 <FileWriteArea>:
     SimpleLabel:
         text: "Write class marks"
+    
+    SimpleLabel:
+        text: str(root.parent.parent.parent.students) if root.parent else 'Hello'
 
 
 #@@@@@@@
@@ -176,7 +228,7 @@
 
 
 #@@@@@@@
-<TunedTextInput@TextInput>:
+<TunedTextInput>:
     line_height: self.height
     multiline: False    
     pos: self.parent.pos
@@ -190,6 +242,7 @@
     background_color: (0, 0, 0, 0)
     cursor_color: (.4, .4, .4, 1)
     cursor_width: 2
+    on_focus: self.adopt_scroll()
     on_text: self.parent.text = self.text
 
 
@@ -251,6 +304,23 @@
     theme_text_color: "Custom"
     text_color: (.4, .4, .4, 1)
     height: "40sp"
+
+
+#@@@@@@@
+<CB>:
+    cols: 2
+    text: ''
+    adaptive_height: True
+    spacing: "10sp"
+
+    MDCheckbox:
+        size_hint: None, None
+        size: "22sp", "22sp"
+        pos_hint: {'center_x': .5, 'center_y': .5}
+    
+    MDLabel:
+        text: root.text
+        font_size: "20sp"
 
 
 #
@@ -316,6 +386,7 @@
 
 #@@@@@@@
 <ExpPanelFirstItem>:
+    placeholder: ''
     cols: 2
     size_hint_y: None
     height: "40sp"
@@ -329,7 +400,7 @@
             radius: [self.height*.2] 
     
     TunedTextInput:
-        hint_text: "Курс (класс)"
+        hint_text: root.placeholder
             
     ExpArrow:
 
@@ -340,14 +411,13 @@
     size_hint_y: None
     height: "40sp"
     students: []
-   
+    standarts: []
+
     ExpPanelInput:
         SubButton:
             icon: "pencil"
             height: "40sp"
-            on_release: 
-                print(root.students) 
-                root.update_class(self.parent.children[1])
+            on_release: root.update(self.parent.children[1])
      
     SubButton:
         icon: "minus-circle"
@@ -456,6 +526,7 @@
 <DropListItem>:
     name: ""
     students: []
+    group: ''
     size_hint_y: None
     height: "35sp"
     background_normal: ''
@@ -542,7 +613,8 @@
             FloatLayout:
                 NavItem:
                     name: "Settings" 
-                    icon: "cog" 
+                    # !!!WARNING!!!                    
+                    icon: "settings" if platform == "linux" else "cog" # remove on prodaction
                     on_release: root.redirect(self)        
 
 
@@ -621,6 +693,7 @@
 # 
 <ClassScreen>:
     students: []
+    title: ''
     ScreenBox:
         AreaScroll:
             ClassArea:
@@ -634,7 +707,25 @@
                         root.update_students() 
                         root.redirect(self)
                         root.parent.update_settings_students(root.name, root.students)
-                        
+#
+# Exercise Screen
+#                
+<ExerciseScreen>:
+    standarts: []
+    title: ''
+    ScreenBox:
+        AreaScroll:
+            ExerciseArea:
+                
+        Nav:
+            FloatLayout:
+                NavItem: 
+                    name: "Settings"
+                    icon: "arrow-left-circle"
+                    on_release:
+                        root.update_standarts()
+                        root.redirect(self)
+                        root.parent.update_settings_standarts(root.title, root.standarts)
 #
 # OpenFileScreen
 #

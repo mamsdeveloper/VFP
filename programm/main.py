@@ -11,24 +11,42 @@ from kivymd.app import MDApp
 from kivymd.uix.button import MDIconButton
 from kivymd.uix.gridlayout import GridLayout, MDGridLayout
 from kivymd.uix.screen import MDScreen
-
+from kivymd.uix.selectioncontrol import MDCheckbox
+from kivy.uix.textinput import TextInput
+from sys import platform
+from kivy.core.window import Window
 from config_utils import *
 
 
 #
 # Screen managers and Screens
 #
-class AppScreenManager(ScreenManager):
+class AppScreenManager(ScreenManager):    
     def update_settings_students(self, name, students):
         """
-        Needed for update list of exps on settings string
+        Needed for update list of exps on settings screen
         else app destoes on android
         """
-        for exp in self.children[0].exps:
+        for exp in self.children[0].classes_exps:
             for item in exp.items_list.children:
                 if item.children[1].text == name:
                     item.students = students
                     break
+
+    def update_settings_standarts(self, title, standarts):
+        """
+        Needed for update list of exps on settings screen
+        else app destoes on android
+        """
+        exercise, group = title.split(':')
+        group = group[1:]
+
+        for exp in self.children[0].exercises_exps:
+            if exp.children[1].children[-1].text == exercise:
+                for item in exp.items_list.children:
+                    if item.children[1].text == group:
+                        item.standarts = standarts
+                        break
 
 
 # Screen that provide default properties for screens
@@ -52,7 +70,8 @@ class ParentScreen(MDScreen):
                 self.parent.current = 'Settings'
 
         elif instance.name == 'Create':
-            self.parent.switch_to(CreateScreen(name='Settings'))
+            self.parent.switch_to(CreateScreen(name='Create'))
+
         print('@DONE')
 
 
@@ -77,12 +96,12 @@ class CreateScreen(ParentScreen):
         }
         self.class_name = ''
         self.students = []
+        self.exercises = {}
 
         self.settings_area = FileSettingsArea()
         self.write_area = FileWriteArea()
         self.area = 'SettingsArea'
         self.children[0].children[-1].add_widget(self.settings_area)
-
         self.apply_config()
         print('@DONE')
 
@@ -101,20 +120,24 @@ class CreateScreen(ParentScreen):
         self.area = instance.name
         if instance.name == 'SettingsArea':
             self.children[0].children[-1].add_widget(self.settings_area)
-            self.children[0].children[2].do_scroll_y = False
         else:
             self.children[0].children[-1].add_widget(self.write_area)
-            self.children[0].children[2].do_scroll_y = True
 
     def update_drop_list(self, drop_list):
         """
         Set new values to class drop list
         """
-        for item in drop_list:
-            self.settings_area.children[0].area.children[0].children[0].add_widget(
-                DropListItem())
-            self.settings_area.children[0].area.children[0].children[0].children[0].name = item[0]
-            self.settings_area.children[0].area.children[0].children[0].children[0].students = item[1]
+        for group in drop_list:
+            for cls in drop_list[group]:
+                self.settings_area.children[0].area.children[0].children[0].add_widget(
+                    DropListItem())
+                self.settings_area.children[0].area.children[0].children[0].children[0].group = group
+                self.settings_area.children[0].area.children[0].children[0].children[0].name = cls[0]
+                self.settings_area.children[0].area.children[0].children[0].children[0].students = cls[1]
+
+    def update_checkboxes(self):
+        for exercise in self.exercises:
+            self.settings_area.children[2].add_widget(CB(exercise))
 
     def apply_config(self):
         """
@@ -137,14 +160,23 @@ class CreateScreen(ParentScreen):
         teacher_list.children[1].text = config['teacher']['rank']
         teacher_list.children[0].text = config['teacher']['post']
 
+        # exercises checkboxes
+        self.exercises = config['exercises']
+        self.update_checkboxes()
+
+        self.exercises
         # classes list
-        drop_list = []
-        for group in config['groups'].values():
-            drop_list += group
+        drop_list = {}
+        for group in config['groups']:
+            drop_list.update({group: []})
+            for cls in config['groups'][group]:
+                drop_list[group].append(cls)
 
         self.update_drop_list(drop_list)
 
-        del config, teacher_list, drop_list, group
+        for val in locals().values():
+            del val
+
         print('@DONE')
 
 
@@ -164,18 +196,27 @@ class SettingsScreen(ParentScreen):
         """
         print('>>> Init Settings Screen')
         super().__init__(**kwargs)
-        self.exps = []
+        self.classes_exps = []
+        self.exercises_exps = []
         self.apply_config()
         print('@DONE')
 
-    def update_exps(self, exps):
+    def update_exps(self, name, exps):
         """
         Update exppanels values by class' exps' list
         """
-        self.exps = exps.copy()
-        for exp in self.exps:
-            self.children[0].children[1].children[0].children[1].add_widget(
-                exp)
+        if name == 'classes_exps':
+            self.classes_exps = exps.copy()
+            self.children[0].children[1].children[0].children[4].clear_widgets()
+            for exp in self.classes_exps:
+                self.children[0].children[1].children[0].children[4].add_widget(
+                    exp)
+        else:
+            self.exercises_exps = exps.copy()
+            self.children[0].children[1].children[0].children[1].clear_widgets()
+            for exp in self.exercises_exps:
+                self.children[0].children[1].children[0].children[1].add_widget(
+                    exp)
 
     def apply_config(self):
         """
@@ -198,9 +239,7 @@ class SettingsScreen(ParentScreen):
         teacher_list.children[1].text = config['teacher']['rank']
         teacher_list.children[0].text = config['teacher']['post']
 
-        # groups
-        all_widgets.children[1].clear_widgets()
-
+        # classes
         exps = []
 
         for group in config['groups']:
@@ -219,11 +258,32 @@ class SettingsScreen(ParentScreen):
 
             exps.append(exp)
 
-            del exp, exp_item, item, group
+        self.update_exps('classes_exps', exps)
 
-        self.update_exps(exps)
+        # exercises
+        exps = []
 
-        del config, all_widgets, teacher_list, exps
+        for exercise in config['exercises']:
+            # create exp panel
+            exp = ExpPanel()
+
+            # set group name
+            exp.children[1].children[-1].children[1].text = exercise
+
+            # create items
+            for item in config['exercises'][exercise]:
+                exp_item = ExpPanelItem()  # create
+                exp_item.children[1].children[1].text = item[0]  # set text
+                exp_item.standarts = item[1]  # set standarts
+                exp.items_list.add_widget(exp_item)  # add item to items list
+
+            exps.append(exp)
+
+        self.update_exps('exercises_exps', exps)
+
+        for val in locals().values():
+            del val
+
         print('@DONE')
 
     def save_settings(self, instance):
@@ -236,13 +296,13 @@ class SettingsScreen(ParentScreen):
 
 
 class ClassScreen(ParentScreen):
-    def __init__(self, students=[], **kwargs):
+    def __init__(self, students=[], title='', **kwargs):
         """
         Set parent item, students' list and add them to students' box
         """
         super().__init__(**kwargs)
         self.name = kwargs['name']
-
+        self.title = title
         self.students = students
         self.student_box = self.children[0].children[1].children[0].children[1]
 
@@ -261,6 +321,41 @@ class ClassScreen(ParentScreen):
                 self.students.append(item.children[1].children[0].text)
 
         self.students.sort()
+
+    def redirect(self, instance):
+        """
+        Redefining parent class redirect method to delete screen after redirect
+        """
+        super().redirect(instance)
+        self.parent.remove_widget(self)
+
+
+class ExerciseScreen(ParentScreen):
+    def __init__(self, standarts=[], title='', **kwargs):
+        """
+        Set parent item
+        """
+        super().__init__(**kwargs)
+        self.name = kwargs['name']
+        self.title = title
+        self.standarts = standarts
+
+        if len(standarts) == 3:
+            self.children[0].children[1].children[0].children[4].text = self.standarts[0]
+            self.children[0].children[1].children[0].children[2].text = self.standarts[1]
+            self.children[0].children[1].children[0].children[0].text = self.standarts[2]
+
+        # Turn off scrolling
+        self.children[0].children[1].do_scroll_y = False
+
+    def update_standarts(self):
+        """
+        Add marks standarts from screen items to standarts' list
+        """
+        items = self.children[0].children[1].children[0].children
+        self.standarts = [items[4].text,    # 5
+                          items[2].text,    # 4
+                          items[0].text]    # 3
 
     def redirect(self, instance):
         """
@@ -305,6 +400,10 @@ class ClassArea(ParentArea):
     pass
 
 
+class ExerciseArea(ParentArea):
+    pass
+
+
 class FileSettingsArea(ParentArea):
     def on_touch_down(self, *args):
         """
@@ -314,7 +413,8 @@ class FileSettingsArea(ParentArea):
         if (
             self.children[0].st and
             not self.children[0].area.children[0].collide_point(*args[0].pos) and
-            not self.children[0].children[-1].children[0].collide_point()
+            not self.children[0].children[-1].children[0].collide_point(
+                *args[0].pos)
         ):
             self.children[0].change_state()
 
@@ -331,12 +431,22 @@ class FileViewArea(ParentArea):
 # Expansion Panel
 #
 class ExpsList(MDGridLayout):
-    def add_exp(self):
+    def add_exp(self, instance):
         """
         Add new exp panel to exps list.
-        close opened exps.
+        Update screen's exps list
+        Close opened exps.
         """
-        self.add_widget(ExpPanel())
+        self.add_widget(ExpPanel(
+            placeholder='Курс (класс)' if self.name == 'classes_exps' else 'Упражнение'
+        ))
+
+        exps = []
+        for exp in reversed(self.children):
+            exps.append(exp)
+
+        self.parent.parent.parent.parent.update_exps(self.name, exps)
+
         # close exps
         for exp in self.children:
             if exp.st:
@@ -345,12 +455,19 @@ class ExpsList(MDGridLayout):
     def del_exp(self, instance):
         """
         Del exp from list
+        Update screen's exps list
         """
         self.remove_widget(instance.parent.parent)
 
+        exps = []
+        for exp in reversed(self.children):
+            exps.append(exp)
+
+        self.parent.parent.parent.parent.update_exps(self.name, exps)
+
 
 class ExpPanel(MDGridLayout):
-    def __init__(self, **kwargs):
+    def __init__(self, placeholder='', **kwargs):
         """
         Init panel's main widgets.
         Creare items list.
@@ -365,7 +482,7 @@ class ExpPanel(MDGridLayout):
         self.items_list = ExpPanelItemsList()
 
         # add first item, items list and add-button in box
-        self.children[1].add_widget(ExpPanelFirstItem())
+        self.children[1].add_widget(ExpPanelFirstItem(placeholder))
 
         # self close/open state
         self.st = False
@@ -422,7 +539,12 @@ class ExpRightButton(AnchorLayout):
 
 
 class ExpPanelFirstItem(GridLayout):
-    pass
+    def __init__(self, placeholder):
+        """
+        docstring
+        """
+        super().__init__()
+        self.placeholder = placeholder
 
 
 class ExpPanelAddButton(AnchorLayout):
@@ -430,16 +552,40 @@ class ExpPanelAddButton(AnchorLayout):
 
 
 class ExpPanelItem(GridLayout):
+    def update(self, instance):
+        if instance.parent.parent.parent.parent.parent.parent.name == 'classes_exps':
+            self.update_class(instance)
+        else:
+            self.update_exercises(instance)
+
     def update_class(self, instance):
         """
-        Create new screen, redirect to it.
+        Create class update screen, redirect to it.
         """
         # create class screen
-        self.class_scr = ClassScreen(self.students, name=instance.text)
+        self.class_scr = ClassScreen(
+            self.students, instance.text, name=instance.text)
         # add screen in screen manager
         sm = self.parent.parent.parent.parent.parent.parent.parent.parent.parent
         sm.transition.direction = 'left'
         sm.add_widget(self.class_scr)
+        sm.current = instance.text
+
+        del sm
+
+    def update_exercises(self, instance):
+        """
+        Create exercises screen, redirect to it.
+        """
+        # create class screen
+        title = self.parent.parent.children[-1].text + ': ' + instance.text
+        self.exercise_scr = ExerciseScreen(
+            self.standarts, title, name=instance.text)
+
+        # add screen in screen manager
+        sm = self.parent.parent.parent.parent.parent.parent.parent.parent.parent
+        sm.transition.direction = 'left'
+        sm.add_widget(self.exercise_scr)
         sm.current = instance.text
 
         del sm
@@ -482,9 +628,10 @@ class DropInput(MDGridLayout):
 
     def choose_item(self, instance):
         """
-        Choose item frop drop list and set to label
+        Choose item frop drop list and set to label, set students list to screen
         """
         self.children[-1].children[-1].text = instance.name
+        self.parent.parent.parent.parent.students = instance.students
         self.change_state()
 
 
@@ -546,6 +693,18 @@ class StudentItem(GridLayout):
         self.text = text
 
 
+class CB(MDGridLayout):
+    def __init__(self, text):
+        super().__init__()
+        self.text = text
+
+
+class TunedTextInput(TextInput):
+    def adopt_scroll(self):
+        if self.focus:
+            self.get_root_window().children[0].current_screen.children[0].children[-1].scroll_to(self)
+
+
 #
 # Application
 #
@@ -556,7 +715,7 @@ class VFP(MDApp):
         Create and return ScreenManager
         """
         self.title = 'ВФП'
-        self.icon = '..\\data\\logo.png'
+        self.icon = 'logo.png'
         self.theme_cls.primary_palette = 'Gray'
 
         sm = AppScreenManager()
@@ -569,11 +728,12 @@ class VFP(MDApp):
 # Running application
 def main():
     Clock.max_iteration = 1000
+    Window.softinput_mode = 'below_target'
     app = VFP()
     app.run()
 
 
 if __name__ == '__main__':
     main()
-    
-        
+
+
