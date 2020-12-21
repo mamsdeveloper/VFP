@@ -191,7 +191,7 @@
             hint_text: "Должность"
 
     SimpleLabel:
-        text: 'Упражнения:'
+        text: "Упражнения:"
     
     GridLayout:
         cols: 1
@@ -212,7 +212,7 @@
         text: "Write class marks"
     
     SimpleLabel:
-        text: str(root.parent.parent.parent.students) if root.parent else 'Hello'
+        text: str(root.parent.parent.parent.students) if root.parent else "Hello"
 
 
 #@@@@@@@
@@ -309,14 +309,16 @@
 #@@@@@@@
 <CB>:
     cols: 2
-    text: ''
+    text: ""
+    standarts: []
     adaptive_height: True
     spacing: "10sp"
 
     MDCheckbox:
         size_hint: None, None
         size: "22sp", "22sp"
-        pos_hint: {'center_x': .5, 'center_y': .5}
+        pos_hint: {"center_x": .5, "center_y": .5}
+        on_active: root.parent.parent.parent.parent.parent.update_exercises(root.parent)
     
     MDLabel:
         text: root.text
@@ -386,7 +388,7 @@
 
 #@@@@@@@
 <ExpPanelFirstItem>:
-    placeholder: ''
+    placeholder: ""
     cols: 2
     size_hint_y: None
     height: "40sp"
@@ -497,6 +499,8 @@
     size_hint: None, None
     height: "180sp"
     width: self.parent.width*.5 if self.parent else 0
+    effect_cls: "ScrollEffect"
+
     canvas.before:
         Color: 
             rgba: 0, 0, 0, .2
@@ -526,10 +530,10 @@
 <DropListItem>:
     name: ""
     students: []
-    group: ''
+    group: ""
     size_hint_y: None
     height: "35sp"
-    background_normal: ''
+    background_normal: ""
     background_color: (0, 0, 0, 0)
     canvas.before:
         Color: 
@@ -571,7 +575,7 @@
 
 #@@@@@@@
 <NavSub@FloatLayout>:
-    name: ''
+    name: ""
     canvas.before:
         Color: 
             rgba: (1, 1, 1, .6) if self.parent.parent.parent.area == self.name else (0, 0, 0, 0)
@@ -693,7 +697,7 @@
 # 
 <ClassScreen>:
     students: []
-    title: ''
+    title: ""
     ScreenBox:
         AreaScroll:
             ClassArea:
@@ -712,7 +716,7 @@
 #                
 <ExerciseScreen>:
     standarts: []
-    title: ''
+    title: ""
     ScreenBox:
         AreaScroll:
             ExerciseArea:

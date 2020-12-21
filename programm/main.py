@@ -1,5 +1,6 @@
 from kivy.clock import Clock
 from kivy.config import Config
+from kivy.core.window import Window
 from kivy.graphics import Color, RoundedRectangle
 from kivy.lang import Builder
 from kivy.uix.anchorlayout import AnchorLayout
@@ -7,21 +8,20 @@ from kivy.uix.button import Button
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.scrollview import ScrollView
+from kivy.uix.textinput import TextInput
 from kivymd.app import MDApp
 from kivymd.uix.button import MDIconButton
 from kivymd.uix.gridlayout import GridLayout, MDGridLayout
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.selectioncontrol import MDCheckbox
-from kivy.uix.textinput import TextInput
-from sys import platform
-from kivy.core.window import Window
+
 from config_utils import *
 
 
 #
 # Screen managers and Screens
 #
-class AppScreenManager(ScreenManager):    
+class AppScreenManager(ScreenManager):
     def update_settings_students(self, name, students):
         """
         Needed for update list of exps on settings screen
@@ -137,7 +137,14 @@ class CreateScreen(ParentScreen):
 
     def update_checkboxes(self):
         for exercise in self.exercises:
-            self.settings_area.children[2].add_widget(CB(exercise))
+            self.settings_area.children[2].add_widget(
+                CB(exercise, self.exercises[exercise]))
+
+    def update_exercises(self, instance):
+        self.exercises = {}
+        for cb in instance.children:
+            if cb.children[1].active:
+                self.exercises.update({cb.text: cb.standarts})
 
     def apply_config(self):
         """
@@ -405,16 +412,15 @@ class ExerciseArea(ParentArea):
 
 
 class FileSettingsArea(ParentArea):
-    def on_touch_down(self, *args):
+    def on_touch_up(self, *args):
         """
         Close drop input on screen touch
         """
-        super().on_touch_down(*args)
+        super().on_touch_up(*args)
         if (
             self.children[0].st and
             not self.children[0].area.children[0].collide_point(*args[0].pos) and
-            not self.children[0].children[-1].children[0].collide_point(
-                *args[0].pos)
+            not self.children[0].children[-1].children[0].collide_point(*args[0].pos)
         ):
             self.children[0].change_state()
 
@@ -602,20 +608,22 @@ class DropInput(MDGridLayout):
         super().__init__(**kwargs)
         self.area = DropInputDropArea()
         self.add_widget(DropInputFirstItem())
+        self.add_widget(self.area)
+        self.area.children[0].height = 0
         self.st = False
 
     def change_state(self):
         """
         Change drop input state (close or open)
         """
-        # close
         if self.st:
-            self.remove_widget(self.area)
+            self.area.children[0].height = 0
             self.children[-1].children[0].icon = 'menu-right'
-        # open
+            self.get_root_window().children[0].current_screen.children[0].children[-1].do_scroll_y = True
         else:
-            self.add_widget(self.area)
+            self.area.children[0].height = '180sp'
             self.children[-1].children[0].icon = 'arrow-down-drop-circle'
+            self.get_root_window().children[0].current_screen.children[0].children[-1].do_scroll_y = False
 
         self.st = not self.st
 
@@ -649,7 +657,7 @@ class DropInputScroll(ScrollView):
         """
         Change radius to children radius
         """
-        self.rad = height*.2
+        self.rad = height * .2
 
 
 class DropInputFirstItem(GridLayout):
@@ -664,6 +672,7 @@ class DropListItem(Button):
         super().on_touch_down(*args)
         # to exclude touching of other items
         if self.collide_point(*args[0].pos):
+            print(self.get_root_window().children[0].current_screen.children[0].children[-1].do_scroll_y)
             self.parent.parent.parent.parent.choose_item(self)
 
 
@@ -694,15 +703,22 @@ class StudentItem(GridLayout):
 
 
 class CB(MDGridLayout):
-    def __init__(self, text):
+    def __init__(self, text, standarts):
         super().__init__()
         self.text = text
+        self.standarts = standarts
+
+    def on_touch_down(self, touch):
+        super().on_touch_down(touch)
+        if self.collide_point(touch.x, touch.y) and not self.children[1].collide_point(touch.x, touch.y):
+            self.children[1].active = not self.children[1].active
 
 
 class TunedTextInput(TextInput):
     def adopt_scroll(self):
         if self.focus:
-            self.get_root_window().children[0].current_screen.children[0].children[-1].scroll_to(self)
+            self.get_root_window(
+            ).children[0].current_screen.children[0].children[-1].scroll_to(self)
 
 
 #
@@ -735,5 +751,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
