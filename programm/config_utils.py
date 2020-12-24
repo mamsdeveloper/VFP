@@ -39,7 +39,7 @@ def save_config(self):
         config_file.close()
 
 
-    # exercises
+    # classes
     classes_config = ConfigParser()
 
     exps = self.classes_exps
@@ -63,14 +63,14 @@ def save_config(self):
                 continue
 
             classes_config[group.title()][class_name] = str(item.students)
-    
+
     # save classes configs
     path = get_congif_path('classes.ini')
     with open(path, "w") as config_file:
         classes_config.write(config_file)
         config_file.close()
     
-    # classes
+    # exercises
     exercises = ConfigParser()
 
     exps = self.exercises_exps
@@ -88,14 +88,15 @@ def save_config(self):
 
         # add classes in group
         for item in reversed(exp.items_list.children):
-            exercise_name = item.children[1].children[1].text
+            group_name = item.children[1].children[1].text
+            print(group_name)
             # validate
-            if not exercise_name:
+            if not group_name:
                 continue
 
-            exercises[exercise][exercise_name] = str(item.standarts)
+            exercises[exercise][group_name] = str(item.standarts)
     
-    # save classes configs
+    # save exercises configs
     path = get_congif_path('exercises.ini')
     with open(path, "w") as config_file:
         exercises.write(config_file)

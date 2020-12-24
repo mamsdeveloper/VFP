@@ -13,8 +13,8 @@
 #@@@@@@@
 <ScreenBox@MDGridLayout>:
     cols: 1
-    padding: ["8sp", "15sp"]
-    spacing: "15sp"
+    padding: [sp(8), sp(15)]
+    spacing: sp(15)
     
 
 #@@@@@@@
@@ -30,8 +30,8 @@
     cols: 1
     height: self.minimum_height
     size_hint_y: None
-    padding: ["10sp", "15sp"]
-    spacing: "12sp"
+    padding: [sp(10), sp(15)]
+    spacing: sp(12)
 
 
 #@@@@@@@
@@ -43,7 +43,7 @@
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [self.parent.height*.02]
+            radius: [sp(10)]
 
 
 #@@@@@@@
@@ -68,15 +68,15 @@
 
     MDGridLayout:
         cols: 1
-        spacing: "12sp"
+        spacing: sp(12)
         adaptive_height: True
         canvas.before:
             Color:
-                rgba: 0, 0, 0, .2
+                rgba: 0, 0, 0, .15
             RoundedRectangle:
                 pos: self.pos
                 size: self.size
-                radius: [self.height*.2]
+                radius: [sp(8)]
         
         SimpleTextInput:
             hint_text: "ФИО"
@@ -96,7 +96,7 @@
     AnchorLayout:
         anchor_x: "center"
         size_hint_y: None
-        height: "40sp"
+        height: sp(40)
 
         SubButton:
             icon: "plus-circle"
@@ -111,7 +111,7 @@
     AnchorLayout:
         anchor_x: "center"
         size_hint_y: None
-        height: "40sp"
+        height: sp(40)
 
         SubButton:
             icon: "plus-circle"
@@ -128,7 +128,7 @@
     AnchorLayout:
         anchor_x: "center"
         size_hint_y: None
-        height: "40sp"
+        height: sp(40)
 
         SubButton:
             icon: "plus-circle"
@@ -171,15 +171,15 @@
 
     MDGridLayout:
         cols: 1
-        spacing: "12sp"
+        spacing: sp(12)
         adaptive_height: True
         canvas.before:
             Color:
-                rgba: 0, 0, 0, .2
+                rgba: 0, 0, 0, .15
             RoundedRectangle:
                 pos: self.pos
                 size: self.size
-                radius: [self.height*.2]
+                radius: [sp(8)]
         
         SimpleTextInput:
             hint_text: "ФИО"
@@ -197,8 +197,8 @@
         cols: 1
         size_hint_y: None
         height: self.minimum_height
-        spacing: "10sp"
-        padding: ["5sp", 0]
+        spacing: sp(10)
+        padding: [sp(5), 0]
 
     SimpleLabel:
         text: "Класс:"
@@ -209,10 +209,12 @@
 #@@@@@@@
 <FileWriteArea>:
     SimpleLabel:
-        text: "Write class marks"
+        text: "Результаты класс"
     
-    SimpleLabel:
-        text: str(root.parent.parent.parent.students) if root.parent else "Hello"
+    MDGridLayout:
+        cols: 1
+        adaptive_height: True
+        spacing: sp(12)
 
 
 #@@@@@@@
@@ -221,10 +223,10 @@
 # Area"s items
 #
 <SimpleLabel@MDLabel>:
-    padding: ["5sp", 0]
+    padding: [sp(5), 0]
     size_hint_y: None
     height: self.font_size
-    font_size: "22sp"
+    font_size: sp(22)
 
 
 #@@@@@@@
@@ -232,11 +234,11 @@
     line_height: self.height
     multiline: False    
     pos: self.parent.pos
-    padding: ["8sp", self.height//4-self.font_size//8]
+    padding: [sp(8), self.height//4-self.font_size//8]
     size_hint: 0.95, 1
     color: (0, 0, 0, 1)
     text_size: self.size
-    font_size: "20sp"
+    font_size: sp(20)
     background_normal: ""
     background_active: ""
     background_color: (0, 0, 0, 0)
@@ -249,7 +251,7 @@
 #@@@@@@@
 <SimpleTextInput@FloatLayout>:
     size_hint_y: None
-    height: "40sp"
+    height: sp(40)
     hint_text: ""
     text: ""
 
@@ -259,7 +261,7 @@
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [self.height*.2]
+            radius: [sp(8)]
     
     TunedTextInput:
         hint_text: self.parent.hint_text
@@ -271,14 +273,14 @@
     cols: 1
     height: 0
     adaptive_height: True
-    spacing: "10sp"
+    spacing: sp(10)
 
 
 #@@@@@@@
 <StudentItem>:
     cols: 2
     size_hint_y: None
-    height: "40sp"
+    height: sp(40)
     text: ""
 
     SimpleTextInput:
@@ -290,12 +292,13 @@
         on_release: root.parent.del_student(root)
 
 
+#@@@@@@@
 <SubButton@MDIconButton>:
-    user_font_size: "24sp"
+    user_font_size: sp(24)
     theme_text_color: "Custom"
     text_color: (.4, .4, .4, 1)
-    height: "40sp"
-    width: "45sp"
+    height: sp(40)
+    width: sp(45)
 
 
 #@@@@@@@
@@ -303,7 +306,7 @@
     icon: "menu-right"
     theme_text_color: "Custom"
     text_color: (.4, .4, .4, 1)
-    height: "40sp"
+    height: sp(40)
 
 
 #@@@@@@@
@@ -312,17 +315,65 @@
     text: ""
     standarts: []
     adaptive_height: True
-    spacing: "10sp"
+    spacing: sp(10)
 
     MDCheckbox:
         size_hint: None, None
-        size: "22sp", "22sp"
+        size: sp(22), sp(22)
         pos_hint: {"center_x": .5, "center_y": .5}
         on_active: root.parent.parent.parent.parent.parent.update_exercises(root.parent)
     
     MDLabel:
         text: root.text
-        font_size: "20sp"
+        font_size: sp(20)
+
+
+#@@@@@@@
+<WriteAreaItem>:
+    cols: 1
+    spacing: sp(5)
+    padding: [0, sp(5), 0, 0]
+    adaptive_height: True
+    height: 0
+    canvas.before:
+        Color: 
+            rgba: 1, 1, 1, .5
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [sp(40)*.2]
+
+    MDLabel:
+        text: "Some Name"
+        padding: [sp(5), 0]
+        font_size: sp(18)
+        size_hint_y: None
+        size: self.texture_size
+
+    MDGridLayout:
+        cols: 2
+        spacing: sp(10) if len(self.children) > 1 else 0
+        adaptive_height: True
+        height: 0
+        
+
+#@@@@@@@
+<ExerciseResultItem>:
+    cols: 1
+    adaptive_height: True
+    spacing: 0
+
+    MDLabel:
+        font_size: sp(12)
+        size_hint_y: None
+        size: self.texture_size
+        max_lines: 1
+        shorten: True
+        text: "None"
+        padding: [sp(5), 0]
+
+    SimpleTextInput:
+        hint_text: "Результат"
 
 
 #
@@ -332,7 +383,7 @@
     cols: 1
     adaptive_height: True
     height: 0
-    spacing: "10sp"
+    spacing: sp(10)
 
 
 #@@@@@@@
@@ -343,31 +394,30 @@
 
 #@@@@@@@
 <ExpPanelBox>:
-    rad: 40
     cols: 1
     adaptive_height: True
     canvas.before:
         Color:
-            rgba: 0, 0, 0, .2
+            rgba: 0, 0, 0, .15
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [self.rad]
+            radius: [sp(8)]
 
 
 #@@@@@@@
 <ExpPanelItemsList>:
     cols: 1
     adaptive_height: True
-    spacing: "10sp"
-    padding: [0, "10sp", 0, 0] if self.height > 10 else [0, ]
+    spacing: sp(10)
+    padding: [0, sp(10), 0, 0] if self.height > 10 else [0, ]
 
 
 #@@@@@@@
 <ExpPanelAddButton>:
     anchor_x: "center"
     size_hint_y: None
-    height: "40sp"
+    height: sp(40)
 
     SubButton:
         icon: "plus-circle"
@@ -382,7 +432,7 @@
 
     SubButton:
         icon: "minus-circle"
-        height: "40sp"
+        height: sp(40)
         on_release: root.parent.parent.del_exp(self)
 
 
@@ -391,7 +441,7 @@
     placeholder: ""
     cols: 2
     size_hint_y: None
-    height: "40sp"
+    height: sp(40)
     text: ""
     canvas.before:
         Color: 
@@ -399,7 +449,7 @@
         RoundedRectangle:
             pos: self.pos
             size: self.size 
-            radius: [self.height*.2] 
+            radius: [sp(8)] 
     
     TunedTextInput:
         hint_text: root.placeholder
@@ -411,19 +461,19 @@
 <ExpPanelItem>:
     cols: 2
     size_hint_y: None
-    height: "40sp"
+    height: sp(40)
     students: []
     standarts: []
 
     ExpPanelInput:
         SubButton:
             icon: "pencil"
-            height: "40sp"
+            height: sp(40)
             on_release: root.update(self.parent.children[1])
      
     SubButton:
         icon: "minus-circle"
-        height: "40sp"
+        height: sp(40)
         on_release: root.parent.del_item(root)
 
 
@@ -435,7 +485,7 @@
 #@@@@@@@
 <ExpPanelInput@GridLayout>:
     size_hint_y: None
-    height: "40sp"
+    height: sp(40)
     cols: 2
     text: ""
     canvas.before:
@@ -444,7 +494,7 @@
         RoundedRectangle:
             pos: self.pos
             size: self.size 
-            radius: [self.height*.2] 
+            radius: [sp(8)] 
     
     TunedTextInput:
         hint_text: "Класс"
@@ -463,7 +513,7 @@
 <DropInputFirstItem>:
     cols: 2
     size_hint_y: None
-    height: "40sp"
+    height: sp(40)
     text: ""
     canvas.before:
         Color: 
@@ -471,14 +521,14 @@
         RoundedRectangle:
             pos: self.pos
             size: self.size 
-            radius: [self.height*.2] 
+            radius: [sp(8)] 
     
     MDLabel:
         text: "Курс (класс)"
         theme_text_color: "Custom"
         text_color: (.4, .4, .4, 1) if self.text == "Курс (класс)" else (0, 0, 0, 1)
-        padding: ["8sp", self.height//4-self.font_size//8]
-        font_size: "20sp"
+        padding: [sp(8), self.height//4-self.font_size//8]
+        font_size: sp(20)
      
     DropArrow:
 
@@ -487,27 +537,26 @@
 <DropInputDropArea>:
     anchor_x: "right"
     size_hint_y: None
-    height: "180sp"
+    height: sp(180)
 
 
 #@@@@@@@ 
 <DropInputScroll>:
-    rad: 40
     cols: 1
-    bar_width: "5sp"
+    bar_width: sp(5)
     bar_color: (.4, .4, .4, 1)
     size_hint: None, None
-    height: "180sp"
+    height: sp(180)
     width: self.parent.width*.5 if self.parent else 0
     effect_cls: "ScrollEffect"
 
     canvas.before:
         Color: 
-            rgba: 0, 0, 0, .2
+            rgba: 0, 0, 0, .15
         RoundedRectangle:
             pos: self.pos
             size: self.size 
-            radius: [0, self.rad, self.rad, self.rad]
+            radius: [0, sp(7), sp(7), sp(7)]
     
     DropInputItemsList:
     
@@ -517,8 +566,8 @@
     cols: 1
     height: self.minimum_height
     size_hint_y: None
-    spacing: "10sp"
-    padding: [0, "10sp", 0, 0] 
+    spacing: sp(10)
+    padding: [0, sp(10), 0, 0] 
 
 
 #@@@@@@@
@@ -532,7 +581,7 @@
     students: []
     group: ""
     size_hint_y: None
-    height: "35sp"
+    height: sp(35)
     background_normal: ""
     background_color: (0, 0, 0, 0)
     canvas.before:
@@ -541,14 +590,14 @@
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [self.height*.2]
+            radius: [sp(7)]
     
     MDLabel:
         size_hint: None, None
         size: root.size
         pos: root.pos
-        padding: ["5sp", 0]
-        font_size: "18sp"
+        padding: [sp(5), 0]
+        font_size: sp(18)
         text: root.name
 
     
@@ -564,13 +613,13 @@
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [self.parent.height*.02]
+            radius: [sp(10)]
 
 
 #@@@@@@@
 <NavItem@MDIconButton>:
     pos_hint: {"center_x": .5, "center_y": .5}
-    user_font_size: "32sp"
+    user_font_size: sp(32)
 
 
 #@@@@@@@
@@ -635,7 +684,7 @@
         # Sub Nav
         BoxLayout:
             size_hint_y: None
-            height: "15sp"
+            height: sp(15)
             NavSub:
                 name: "SettingsArea"
 
@@ -736,6 +785,7 @@
 <OpenFileScreen>:
     ScreenBox:
         AreaScroll:
+            FileChooserIconView:
             
         Nav:
             FloatLayout:

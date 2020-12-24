@@ -3,6 +3,7 @@ from kivy.config import Config
 from kivy.core.window import Window
 from kivy.graphics import Color, RoundedRectangle
 from kivy.lang import Builder
+from kivy.metrics import *
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.button import Button
 from kivy.uix.floatlayout import FloatLayout
@@ -11,8 +12,10 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivymd.app import MDApp
 from kivymd.uix.button import MDIconButton
+from kivymd.uix.dialog import MDDialog
 from kivymd.uix.gridlayout import GridLayout, MDGridLayout
 from kivymd.uix.screen import MDScreen
+from kivymd.uix.filemanager import MDFileManager
 from kivymd.uix.selectioncontrol import MDCheckbox
 
 from config_utils import *
@@ -72,6 +75,10 @@ class ParentScreen(MDScreen):
         elif instance.name == 'Create':
             self.parent.switch_to(CreateScreen(name='Create'))
 
+        elif instance.name == 'OpenFile':
+            self.parent.switch_to(OpenFileScreen(name='OpenFile'))
+
+
         print('@DONE')
 
 
@@ -88,12 +95,14 @@ class CreateScreen(ParentScreen):
         print('>>> Init Create Screen')
         super().__init__(**kwargs)
         # data
+        self.dialog = None
         self.school_name = 'None'
         self.teacher = {
             'name': 'None',
             'rank': 'None',
             'post': 'None'
         }
+        self.group = ''
         self.class_name = ''
         self.students = []
         self.exercises = {}
@@ -116,12 +125,17 @@ class CreateScreen(ParentScreen):
         Change current work area.
         Disable scroll on file settings area
         """
-        self.children[0].children[-1].clear_widgets()
-        self.area = instance.name
+
         if instance.name == 'SettingsArea':
-            self.children[0].children[-1].add_widget(self.settings_area)
+            self.open_write_area_dialog()
         else:
+            self.children[0].children[-1].clear_widgets()
+            self.area = 'WriteArea'
+            self.write_area.update_area(
+                self.group, self.class_name, self.students, self.exercises)
+            self.children[0].children[-1].do_scroll_y = True
             self.children[0].children[-1].add_widget(self.write_area)
+            self.children[0].children[-1].scroll_y = 1
 
     def update_drop_list(self, drop_list):
         """
@@ -135,10 +149,10 @@ class CreateScreen(ParentScreen):
                 self.settings_area.children[0].area.children[0].children[0].children[0].name = cls[0]
                 self.settings_area.children[0].area.children[0].children[0].children[0].students = cls[1]
 
-    def update_checkboxes(self):
-        for exercise in self.exercises:
+    def update_checkboxes(self, exercises):
+        for exercise in exercises:
             self.settings_area.children[2].add_widget(
-                CB(exercise, self.exercises[exercise]))
+                CB(exercise, exercises[exercise]))
 
     def update_exercises(self, instance):
         self.exercises = {}
@@ -168,8 +182,7 @@ class CreateScreen(ParentScreen):
         teacher_list.children[0].text = config['teacher']['post']
 
         # exercises checkboxes
-        self.exercises = config['exercises']
-        self.update_checkboxes()
+        self.update_checkboxes(config['exercises'])
 
         self.exercises
         # classes list
@@ -185,6 +198,32 @@ class CreateScreen(ParentScreen):
             del val
 
         print('@DONE')
+
+    def open_write_area_dialog(self):
+        ok_button = MDIconButton(
+            icon='arrow-left-circle-outline',
+            on_press=self.write_area_dialog_callback
+        )
+        cancel_button = MDIconButton(
+            icon='close',
+            on_press=self.write_area_dialog_callback
+        )
+
+        self.dialog = MDDialog(
+            title='Перейти к настройкам?',
+            text='Введенные данные будут утеряны.',
+            size_hint=(.8, None),
+            buttons=[ok_button, cancel_button],
+            auto_dismiss=False
+        )
+        self.dialog.open()
+
+    def write_area_dialog_callback(self, instance):
+        if instance.icon != 'close':
+            self.children[0].children[-1].clear_widgets()
+            self.area = 'SettingsArea'
+            self.children[0].children[-1].add_widget(self.settings_area)
+        self.dialog.dismiss()
 
 
 class UpdateScreen(ParentScreen):
@@ -373,9 +412,7 @@ class ExerciseScreen(ParentScreen):
 
 
 class OpenFileScreen(ParentScreen):
-    def choose_file(self, instance):
-        print('!PLUG! Choose file')
-        self.redirect(instance)
+    pass
 
 
 def swipe_direction(self, instance):
@@ -420,13 +457,31 @@ class FileSettingsArea(ParentArea):
         if (
             self.children[0].st and
             not self.children[0].area.children[0].collide_point(*args[0].pos) and
-            not self.children[0].children[-1].children[0].collide_point(*args[0].pos)
+            not self.children[0].children[-1].children[0].collide_point(
+                *args[0].pos)
         ):
             self.children[0].change_state()
 
 
 class FileWriteArea(ParentArea):
-    pass
+    def update_area(self, group, class_name, students, exercises):
+        """
+        Update write area with neew students and exercises
+        """
+        self.children[1].text = f'Результаты {class_name} класса:'
+
+        for i, student in enumerate(students):
+            self.children[0].add_widget(WriteAreaItem())
+            self.children[0].children[0].children[1].text = student
+            for exercise in exercises:
+                if exercises[exercise][0][0].title() == group:
+                    self.children[0].children[0].children[0].add_widget(
+                        ExerciseResultItem())
+                    self.children[0].children[0].children[0].children[0].children[1].text = exercise
+
+        l = len(self.children[0].children) - len(students)
+        if l:
+            self.children[0].clear_widgets(self.children[0].children[-l:])
 
 
 class FileViewArea(ParentArea):
@@ -447,16 +502,8 @@ class ExpsList(MDGridLayout):
             placeholder='Курс (класс)' if self.name == 'classes_exps' else 'Упражнение'
         ))
 
-        exps = []
-        for exp in reversed(self.children):
-            exps.append(exp)
-
-        self.parent.parent.parent.parent.update_exps(self.name, exps)
-
-        # close exps
-        for exp in self.children:
-            if exp.st:
-                exp.change_state()
+        self.close_all()
+        self.update_exps()
 
     def del_exp(self, instance):
         """
@@ -464,22 +511,32 @@ class ExpsList(MDGridLayout):
         Update screen's exps list
         """
         self.remove_widget(instance.parent.parent)
+        self.update_exps()
 
+    def close_all(self):
+        for exp in self.children:
+            if exp.st:
+                exp.children[1].remove_widget(exp.items_list)
+                exp.children[1].remove_widget(exp.children[1].children[0])
+                exp.children[1].children[0].children[0].icon = 'menu-right'
+                exp.st = False
+        self.update_exps()
+
+    def update_exps(self):
         exps = []
         for exp in reversed(self.children):
             exps.append(exp)
-
         self.parent.parent.parent.parent.update_exps(self.name, exps)
 
 
 class ExpPanel(MDGridLayout):
-    def __init__(self, placeholder='', **kwargs):
+    def __init__(self, placeholder=''):
         """
         Init panel's main widgets.
         Creare items list.
         Change stete to close
         """
-        super().__init__(**kwargs)
+        super().__init__()
         # init box and right button
         self.add_widget(ExpPanelBox())
         self.add_widget(ExpRightButton())
@@ -488,7 +545,8 @@ class ExpPanel(MDGridLayout):
         self.items_list = ExpPanelItemsList()
 
         # add first item, items list and add-button in box
-        self.children[1].add_widget(ExpPanelFirstItem(placeholder))
+        self.placeholder = placeholder
+        self.children[1].add_widget(ExpPanelFirstItem(self.placeholder))
 
         # self close/open state
         self.st = False
@@ -501,29 +559,19 @@ class ExpPanel(MDGridLayout):
         if self.st:
             self.children[1].remove_widget(self.items_list)
             self.children[1].remove_widget(self.children[1].children[0])
-
             self.children[1].children[0].children[0].icon = 'menu-right'
         # open
         else:
-            # close others exps
-            for exp in self.parent.children:
-                if exp != self and exp.st:
-                    exp.change_state()
-
+            self.parent.close_all()
             self.children[1].add_widget(self.items_list)
             self.children[1].add_widget(ExpPanelAddButton())
-
             self.children[1].children[2].children[0].icon = 'arrow-down-drop-circle'
 
         self.st = not self.st
 
 
 class ExpPanelBox(MDGridLayout):
-    def on_children(self, none, children):
-        """
-        Change panel box radius to radius of its children
-        """
-        self.rad = children[0].height*.2
+    pass
 
 
 class ExpPanelItemsList(MDGridLayout):
@@ -619,26 +667,23 @@ class DropInput(MDGridLayout):
         if self.st:
             self.area.children[0].height = 0
             self.children[-1].children[0].icon = 'menu-right'
-            self.get_root_window().children[0].current_screen.children[0].children[-1].do_scroll_y = True
+            self.get_root_window(
+            ).children[0].current_screen.children[0].children[-1].do_scroll_y = True
         else:
             self.area.children[0].height = '180sp'
             self.children[-1].children[0].icon = 'arrow-down-drop-circle'
-            self.get_root_window().children[0].current_screen.children[0].children[-1].do_scroll_y = False
+            self.get_root_window(
+            ).children[0].current_screen.children[0].children[-1].do_scroll_y = False
 
         self.st = not self.st
-
-    def on_children(self, a, children):
-        """
-        When add drop area change its radius to its' children radius
-        """
-        if len(children) == 2:
-            children[0].children[0].change_rad(children[1].height)
 
     def choose_item(self, instance):
         """
         Choose item frop drop list and set to label, set students list to screen
         """
         self.children[-1].children[-1].text = instance.name
+        self.parent.parent.parent.parent.group = instance.group
+        self.parent.parent.parent.parent.class_name = instance.name
         self.parent.parent.parent.parent.students = instance.students
         self.change_state()
 
@@ -653,11 +698,7 @@ class DropInputDropArea(AnchorLayout):
 
 
 class DropInputScroll(ScrollView):
-    def change_rad(self, height):
-        """
-        Change radius to children radius
-        """
-        self.rad = height * .2
+    pass
 
 
 class DropInputFirstItem(GridLayout):
@@ -672,13 +713,24 @@ class DropListItem(Button):
         super().on_touch_down(*args)
         # to exclude touching of other items
         if self.collide_point(*args[0].pos):
-            print(self.get_root_window().children[0].current_screen.children[0].children[-1].do_scroll_y)
             self.parent.parent.parent.parent.choose_item(self)
 
 
 #
 # Area's items
 #
+class TunedTextInput(TextInput):
+    def adopt_scroll(self):
+        area_h = self.get_root_window(
+        ).children[0].current_screen.children[0].children[-1].children[0].height
+        scroll_h = self.get_root_window(
+        ).children[0].current_screen.children[0].children[-1].height
+
+        if self.focus and area_h > scroll_h:
+            self.get_root_window(
+            ).children[0].current_screen.children[0].children[-1].scroll_to(self)
+
+
 class StudentsList(MDGridLayout):
     def add_student(self):
         """
@@ -714,11 +766,12 @@ class CB(MDGridLayout):
             self.children[1].active = not self.children[1].active
 
 
-class TunedTextInput(TextInput):
-    def adopt_scroll(self):
-        if self.focus:
-            self.get_root_window(
-            ).children[0].current_screen.children[0].children[-1].scroll_to(self)
+class ExerciseResultItem(MDGridLayout):
+    pass
+
+
+class WriteAreaItem(MDGridLayout):
+    pass
 
 
 #
