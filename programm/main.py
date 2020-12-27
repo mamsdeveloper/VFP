@@ -131,34 +131,38 @@ class CreateScreen(ParentScreen):
         """
         Save screen values to statement
         """
-        if len(self.exercises) > 3:
-            sb = Snackbar('Не больше 3 упражнений.')
-            sb.show()
-        else:
-            self.update_values()
-            data = {}
-            data.update({'school_name': self.school_name})
-            data.update({'period': self.period})
-            data.update({'teacher': self.teacher})
-            data.update({'class_name': self.class_name})
-            data.update({'group': self.group})
-            data.update({'exercises': list(reversed(self.exercises))})
+        self.update_values()
+        data = {}
+        if self.school_name: data.update({'school_name': self.school_name})
+        if self.period: data.update({'period': self.period})
+        if self.teacher: data.update({'teacher': self.teacher})
+        if self.class_name: data.update({'class_name': self.class_name})
+        if self.group: data.update({'group': self.group})
+        if self.exercises: data.update({
+            'exercises': dict(zip(
+                reversed(self.exercises.keys()),
+                (value for value in reversed(self.exercises.values()))
+            ))
+        })
 
-            results = {}
-            for student in reversed(self.write_area.children[0].children):
-                student_name = student.children[1].text
-                student_results = {}
-                for standard in student.children[0].children:
-                    standard_name = standard.children[1].text
-                    standard_result = standard.children[0].text
-                    student_results.update({standard_name: standard_result})
-                results.update({student_name: student_results})
-            data.update({'results': results})
-            print(data)
-            try:
-                excel_utils.save_file(data)
-            except PermissionError:
-                print('!!! Close file')
+        results = {}
+        for student in reversed(self.write_area.children[0].children):
+            student_name = student.children[1].text
+            student_results = {}
+            for standard in student.children[0].children:
+                standard_name = standard.children[1].text
+                standard_result = standard.children[0].text
+                student_results.update({standard_name: standard_result})
+            results.update({student_name: student_results})
+        if results: data.update({'results': results})
+
+        if len(data) < 7:
+            Snackbar('Заполните все поля').show()
+        elif len(self.exercises) > 3:
+            Snackbar('Не больше 3 упражнений.').show()
+        else:
+            excel_utils.save_file(data)
+
 
     def change_area(self, instance):
         """
