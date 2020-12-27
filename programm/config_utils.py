@@ -1,13 +1,12 @@
-def get_congif_path(filename):
+def get_config_path():
     import os, sys
-    app_dir = sys.path[0] or os.path.dirname(os.path.realpath(sys.argv[0])) or os.getcwd() 
-    filepath = os.path.join(app_dir,filename)
-
+    app_dir = sys.path[0] or os.path.dirname(os.path.realpath(sys.argv[0])) or os.getcwd()
+    filepath = os.path.join(app_dir, 'config.pkl')
     return filepath
 
 
 def save_config(self):
-    from configparser import ConfigParser
+    import pickle
     # screen area widgets
     all_widgets = self.children[0].children[1].children[0]
 
@@ -23,25 +22,8 @@ def save_config(self):
                 'post': teacher_list.children[0].text
                 }
 
-    # create config
-    main_config = ConfigParser()
-
-    # scholl settings
-    main_config['SCHOOL'] = {'name': school_name}
-
-    # teacher settings
-    main_config['TEACHER'] = teacher
-
-    # save main configs
-    path = get_congif_path('main.ini')
-    with open(path, "w") as config_file:
-        main_config.write(config_file)
-        config_file.close()
-
-
     # classes
-    classes_config = ConfigParser()
-
+    groups = {}
     exps = self.classes_exps
     for exp in exps:
         exp_box = exp.children[1]
@@ -53,7 +35,7 @@ def save_config(self):
             continue
 
         # add group section
-        classes_config.add_section(group.title())
+        groups.update({group.title():[]})
 
         # add classes in group
         for item in reversed(exp.items_list.children):
@@ -62,17 +44,10 @@ def save_config(self):
             if not class_name:
                 continue
 
-            classes_config[group.title()][class_name] = str(item.students)
+            groups[group.title()].append([class_name, list(item.students)])
 
-    # save classes configs
-    path = get_congif_path('classes.ini')
-    with open(path, "w") as config_file:
-        classes_config.write(config_file)
-        config_file.close()
-    
     # exercises
-    exercises = ConfigParser()
-
+    exercises = {}
     exps = self.exercises_exps
     for exp in exps:
         exp_box = exp.children[1]
@@ -84,7 +59,7 @@ def save_config(self):
             continue
 
         # add group section
-        exercises.add_section(exercise)
+        exercises.update({exercise:[]})
 
         # add classes in group
         for item in reversed(exp.items_list.children):
@@ -94,69 +69,23 @@ def save_config(self):
             if not group_name:
                 continue
 
-            exercises[exercise][group_name] = str(item.standarts)
-    
-    # save exercises configs
-    path = get_congif_path('exercises.ini')
-    with open(path, "w") as config_file:
-        exercises.write(config_file)
-        config_file.close()
-    
+            exercises[exercise].append([group_name.title(), list(item.standards)])
+
+    config = {
+        'school_name': school_name,
+        'teacher': teacher,
+        'groups': groups,
+        'exercises': exercises
+    }
+
+    with open(get_config_path(), 'wb') as file:
+        pickle.dump(config, file)
+
 
 def get_config():
-    from configparser import ConfigParser
-    # open main config
-    main_config = ConfigParser()
-    path = get_congif_path('main.ini')
-    main_config.read(path)
+    import pickle
 
-    # school
-    school_name = main_config['SCHOOL']['name']
-
-    # teacher
-    teacher = dict(main_config['TEACHER'].items())
-
-    # open classes config
-    classes_config = ConfigParser()
-    path = get_congif_path('classes.ini')
-    classes_config.read(path)
-
-    # get group-classes-students
-    groups = {}
-    for group in classes_config.sections():
-        groups.update({group: []})
-        for class_item in classes_config[group].items():
-            # str to list
-            cls = [class_item[0], class_item[1]]
-            cls[1] = cls[1].replace("'", '')
-            cls[1] = cls[1][1:-1].split(', ')
-            cls[1] = list(filter(lambda student: student!='', cls[1]))
-
-            groups[group].append(cls)
+    with open(get_config_path(), 'rb') as file:
+        config = pickle.load(file)
     
-    
-    # open exercises config
-    exercises_config = ConfigParser()
-    path = get_congif_path('exercises.ini')
-    exercises_config.read(path)
-
-    # get group-classes-students
-    exercises = {}
-    for exercise in exercises_config.sections():
-        exercises.update({exercise: []})
-        for exercise_item in exercises_config[exercise].items():
-            # str to list
-            exr = [exercise_item[0], exercise_item[1]]
-            exr[1] = exr[1].replace("'", '')
-            exr[1] = exr[1][1:-1].split(', ')
-            exr[1] = list(filter(lambda student: exercise!='', exr[1]))
-
-            exercises[exercise].append(exr)
-
-    return {
-            'school_name': school_name, 
-            'teacher': teacher, 
-            'groups': groups,
-            'exercises': exercises,
-            }
-
+    return config

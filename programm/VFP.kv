@@ -167,6 +167,12 @@
         hint_text: "Название организации"
 
     SimpleLabel:
+        text: "Период сдачи:"
+        
+    SimpleTextInput:
+        hint_text: "Период сдачи:"
+
+    SimpleLabel:
         text: "Преподаватель:"
 
     MDGridLayout:
@@ -313,7 +319,7 @@
 <CB>:
     cols: 2
     text: ""
-    standarts: []
+    standards: []
     adaptive_height: True
     spacing: sp(10)
 
@@ -374,6 +380,34 @@
 
     SimpleTextInput:
         hint_text: "Результат"
+
+
+#@@@@@@@
+<Snackbar>:
+    text: ''
+    BoxLayout:
+        id: box
+        y: -sp(48)
+        spacing: dp(5)
+        padding: [sp(8), sp(15)]
+        size_hint_y: None
+        height: app.root_window.children[-1].current_screen.children[0].children[0].height
+
+        canvas:
+            Color:
+                rgba: (1, 1, 1, .9)
+            RoundedRectangle:
+                pos: self.x + sp(8), self.y
+                size: self.width - sp(16), self.height, 
+                radius: [sp(10)]
+
+        MDLabel:
+            size_hint_y: None
+            height: self.texture_size[1]
+            text: root.text
+            font_size: sp(18)
+            halign: "center"
+            pos_hint: {'center_y': .5}
 
 
 #
@@ -463,7 +497,7 @@
     size_hint_y: None
     height: sp(40)
     students: []
-    standarts: []
+    standards: []
 
     ExpPanelInput:
         SubButton:
@@ -669,8 +703,6 @@
                     # !!!WARNING!!!                    
                     icon: "settings" if platform == "linux" else "cog" # remove on prodaction
                     on_release: root.redirect(self)        
-
-
 #
 # Create Screen
 #
@@ -711,16 +743,13 @@
             FloatLayout:
                 NavItem:
                     icon: "content-save" 
-                    on_release: pass
+                    on_release: root.save_file()
         
             FloatLayout:
                 NavItem:
                     name: "Main"
                     icon: "home" 
                     on_release: root.redirect(self)
-
-
-
 #
 # Settings Screen
 #                   
@@ -764,7 +793,7 @@
 # Exercise Screen
 #                
 <ExerciseScreen>:
-    standarts: []
+    standards: []
     title: ""
     ScreenBox:
         AreaScroll:
@@ -776,23 +805,30 @@
                     name: "Settings"
                     icon: "arrow-left-circle"
                     on_release:
-                        root.update_standarts()
+                        root.update_standards()
                         root.redirect(self)
-                        root.parent.update_settings_standarts(root.title, root.standarts)
+                        root.parent.update_settings_standards(root.title, root.standards)
 #
 # OpenFileScreen
 #
 <OpenFileScreen>:
     ScreenBox:
-        AreaScroll:
-            FileChooserIconView:
+        FileChooserIconView:
+            on_selection: print(self.selection)
+            canvas.before:
+                Color:
+                    rgba: 0, 0, 0, .5
+                RoundedRectangle:
+                    # pos: self.pos
+                    size: self.size
+                    radius: [sp(10)]
             
         Nav:
             FloatLayout:
                 NavItem: 
-                    name: "Create"
+                    name: "Update"
                     icon: "check-circle"
-                    on_release: root.choose_file(self)
+                    on_release: root.redirect(self)
 
             FloatLayout:
                 NavItem:
@@ -800,3 +836,30 @@
                     icon: "home" 
                     on_release: root.redirect(self)
 
+
+#
+# Create Screen
+#
+<UpdateScreen>:
+    ScreenBox:
+        AreaScroll:  
+
+        Nav:    
+            FloatLayout:
+                NavItem:
+                    name: "Main"
+                    icon: "delete" 
+                    on_release: pass
+
+            FloatLayout:
+                NavItem:
+                    icon: "content-save" 
+                    on_release: root.save_file()
+
+            FloatLayout:
+                NavItem:
+                    name: "Main"
+                    icon: "home" 
+                    on_release: root.redirect(self)
+            
+            

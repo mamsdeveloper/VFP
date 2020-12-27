@@ -1,3 +1,4 @@
+from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.config import Config
 from kivy.core.window import Window
@@ -11,13 +12,14 @@ from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivymd.app import MDApp
-from kivymd.uix.button import MDIconButton
+from kivymd.uix.button import MDFlatButton, MDIconButton
 from kivymd.uix.dialog import MDDialog
+from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.gridlayout import GridLayout, MDGridLayout
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.filemanager import MDFileManager
 from kivymd.uix.selectioncontrol import MDCheckbox
 
+import excel_utils
 from config_utils import *
 
 
@@ -36,7 +38,7 @@ class AppScreenManager(ScreenManager):
                     item.students = students
                     break
 
-    def update_settings_standarts(self, title, standarts):
+    def update_settings_standards(self, title, standards):
         """
         Needed for update list of exps on settings screen
         else app destoes on android
@@ -48,7 +50,7 @@ class AppScreenManager(ScreenManager):
             if exp.children[1].children[-1].text == exercise:
                 for item in exp.items_list.children:
                     if item.children[1].text == group:
-                        item.standarts = standarts
+                        item.standards = standards
                         break
 
 
@@ -78,6 +80,8 @@ class ParentScreen(MDScreen):
         elif instance.name == 'OpenFile':
             self.parent.switch_to(OpenFileScreen(name='OpenFile'))
 
+        elif instance.name == 'Update':
+            self.parent.switch_to(UpdateScreen(name='Update'))
 
         print('@DONE')
 
@@ -106,6 +110,7 @@ class CreateScreen(ParentScreen):
         self.class_name = ''
         self.students = []
         self.exercises = {}
+        self.period = ''
 
         self.settings_area = FileSettingsArea()
         self.write_area = FileWriteArea()
@@ -114,11 +119,46 @@ class CreateScreen(ParentScreen):
         self.apply_config()
         print('@DONE')
 
+    def update_values(self):
+        self.school_name = self.settings_area.children[-2].text
+        self.period = self.settings_area.children[-4].text
+        teacher_list = self.settings_area.children[-6]
+        self.teacher['name'] = teacher_list.children[2].text
+        self.teacher['rank'] = teacher_list.children[1].text
+        self.teacher['post'] = teacher_list.children[0].text
+
     def save_file(self):
         """
         Save screen values to statement
         """
-        print('!PLUG! Save statement')
+        if len(self.exercises) > 3:
+            sb = Snackbar('Не больше 3 упражнений.')
+            sb.show()
+        else:
+            self.update_values()
+            data = {}
+            data.update({'school_name': self.school_name})
+            data.update({'period': self.period})
+            data.update({'teacher': self.teacher})
+            data.update({'class_name': self.class_name})
+            data.update({'group': self.group})
+            data.update({'exercises': list(reversed(self.exercises))})
+
+            results = {}
+            for student in reversed(self.write_area.children[0].children):
+                student_name = student.children[1].text
+                student_results = {}
+                for standard in student.children[0].children:
+                    standard_name = standard.children[1].text
+                    standard_result = standard.children[0].text
+                    student_results.update({standard_name: standard_result})
+                results.update({student_name: student_results})
+            data.update({'results': results})
+            print(data)
+            try:
+                excel_utils.save_file(data)
+            except PermissionError:
+                print('!!! Close file')
 
     def change_area(self, instance):
         """
@@ -158,7 +198,7 @@ class CreateScreen(ParentScreen):
         self.exercises = {}
         for cb in instance.children:
             if cb.children[1].active:
-                self.exercises.update({cb.text: cb.standarts})
+                self.exercises.update({cb.text: cb.standards})
 
     def apply_config(self):
         """
@@ -175,7 +215,7 @@ class CreateScreen(ParentScreen):
         # teacher
         self.teacher = config['teacher']
 
-        teacher_list = self.settings_area.children[-4]
+        teacher_list = self.settings_area.children[-6]
 
         teacher_list.children[2].text = config['teacher']['name']
         teacher_list.children[1].text = config['teacher']['rank']
@@ -227,7 +267,48 @@ class CreateScreen(ParentScreen):
 
 
 class UpdateScreen(ParentScreen):
-    pass
+    def __init__(self, **kwargs):
+        """
+        Init values that will be used for save statement.
+        Create areas, set current area
+        """
+        print('>>> Init Create Screen')
+        super().__init__(**kwargs)
+        # data
+        self.students = []
+        self.exercises = {}
+
+        self.write_area = FileWriteArea()
+        self.children[0].children[-1].add_widget(self.write_area)
+        self.apply_config()
+        print('@DONE')
+
+    def save_file(self):
+        """
+        Save screen values to statement
+        """
+        data = {}
+        for student in reversed(self.write_area.children[0].children):
+            student_name = student.children[1].text
+            student_results = {}
+            for standard in student.children[0].children:
+                standard_name = standard.children[1].text
+                standard_result = standard.children[0].text
+                student_results.update({standard_name: standard_result})
+            data.update({student_name: student_results})
+        (print(i) for i in data.items())
+
+    def update_exercises(self, instance):
+        self.exercises = {}
+        for cb in instance.children:
+            if cb.children[1].active:
+                self.exercises.update({cb.text: cb.standards})
+
+    def apply_config(self):
+        """
+        Apply opened file data
+        """
+        pass
 
 
 class ViewScreen(ParentScreen):
@@ -320,7 +401,7 @@ class SettingsScreen(ParentScreen):
             for item in config['exercises'][exercise]:
                 exp_item = ExpPanelItem()  # create
                 exp_item.children[1].children[1].text = item[0]  # set text
-                exp_item.standarts = item[1]  # set standarts
+                exp_item.standards = item[1]  # set standards
                 exp.items_list.add_widget(exp_item)  # add item to items list
 
             exps.append(exp)
@@ -377,29 +458,29 @@ class ClassScreen(ParentScreen):
 
 
 class ExerciseScreen(ParentScreen):
-    def __init__(self, standarts=[], title='', **kwargs):
+    def __init__(self, standards=[], title='', **kwargs):
         """
         Set parent item
         """
         super().__init__(**kwargs)
         self.name = kwargs['name']
         self.title = title
-        self.standarts = standarts
+        self.standards = standards
 
-        if len(standarts) == 3:
-            self.children[0].children[1].children[0].children[4].text = self.standarts[0]
-            self.children[0].children[1].children[0].children[2].text = self.standarts[1]
-            self.children[0].children[1].children[0].children[0].text = self.standarts[2]
+        if len(standards) == 3:
+            self.children[0].children[1].children[0].children[4].text = self.standards[0]
+            self.children[0].children[1].children[0].children[2].text = self.standards[1]
+            self.children[0].children[1].children[0].children[0].text = self.standards[2]
 
         # Turn off scrolling
         self.children[0].children[1].do_scroll_y = False
 
-    def update_standarts(self):
+    def update_standards(self):
         """
-        Add marks standarts from screen items to standarts' list
+        Add marks standards from screen items to standards' list
         """
         items = self.children[0].children[1].children[0].children
-        self.standarts = [items[4].text,    # 5
+        self.standards = [items[4].text,    # 5
                           items[2].text,    # 4
                           items[0].text]    # 3
 
@@ -470,11 +551,14 @@ class FileWriteArea(ParentArea):
         """
         self.children[1].text = f'Результаты {class_name} класса:'
 
-        for i, student in enumerate(students):
+        for student in students:
             self.children[0].add_widget(WriteAreaItem())
             self.children[0].children[0].children[1].text = student
-            for exercise in exercises:
-                if exercises[exercise][0][0].title() == group:
+            for exercise in reversed(exercises):
+                if not exercises[exercise]:
+                    continue
+
+                if exercises[exercise][0][0] == group:
                     self.children[0].children[0].children[0].add_widget(
                         ExerciseResultItem())
                     self.children[0].children[0].children[0].children[0].children[1].text = exercise
@@ -555,9 +639,10 @@ class ExpPanel(MDGridLayout):
         """
         Change state of panel (close or open)
         """
+        print
         # close
         if self.st:
-            self.children[1].remove_widget(self.items_list)
+            self.children[1].remove_widget(self.children[1].children[1])
             self.children[1].remove_widget(self.children[1].children[0])
             self.children[1].children[0].children[0].icon = 'menu-right'
         # open
@@ -568,6 +653,7 @@ class ExpPanel(MDGridLayout):
             self.children[1].children[2].children[0].icon = 'arrow-down-drop-circle'
 
         self.st = not self.st
+        self.parent.update_exps()
 
 
 class ExpPanelBox(MDGridLayout):
@@ -634,7 +720,7 @@ class ExpPanelItem(GridLayout):
         # create class screen
         title = self.parent.parent.children[-1].text + ': ' + instance.text
         self.exercise_scr = ExerciseScreen(
-            self.standarts, title, name=instance.text)
+            self.standards, title, name=instance.text)
 
         # add screen in screen manager
         sm = self.parent.parent.parent.parent.parent.parent.parent.parent.parent
@@ -755,10 +841,10 @@ class StudentItem(GridLayout):
 
 
 class CB(MDGridLayout):
-    def __init__(self, text, standarts):
+    def __init__(self, text, standards):
         super().__init__()
         self.text = text
-        self.standarts = standarts
+        self.standards = standards
 
     def on_touch_down(self, touch):
         super().on_touch_down(touch)
@@ -772,6 +858,35 @@ class ExerciseResultItem(MDGridLayout):
 
 class WriteAreaItem(MDGridLayout):
     pass
+
+
+class Snackbar(MDFloatLayout):
+    def __init__(self, text, **kwargs):
+        super().__init__()
+        self.text = text
+        self.duration = 4
+        self._interval = 2
+
+    def show(self):
+        """Show the snackbar."""
+
+        def wait_interval(interval):
+            self._interval += interval
+            if self._interval > self.duration:
+                anim = Animation(y=-self.ids.box.height, d=0.2)
+                anim.bind(
+                    on_complete=lambda *args: Window.parent.remove_widget(self)
+                )
+                anim.start(self.ids.box)
+                Clock.unschedule(wait_interval)
+                self._interval = 0
+
+        Window.parent.add_widget(self)
+        anim = Animation(y=sp(15), d=0.2)
+        anim.bind(
+            on_complete=lambda *args: Clock.schedule_interval(wait_interval, 0)
+        )
+        anim.start(self.ids.box)
 
 
 #
