@@ -1,3 +1,5 @@
+import os
+import sys
 from collections import Counter
 from functools import reduce
 
@@ -5,6 +7,8 @@ import xlrd
 import xlwt
 from xlutils.copy import copy
 
+
+APP_DIR = sys.path[0] or os.path.dirname(os.path.realpath(sys.argv[0])) or os.getcwd()
 
 FONT_USUAL = xlwt.Font()
 FONT_USUAL.name = 'Times New Roman'
@@ -135,7 +139,8 @@ def calculate_class_mark(q, class_marks):
     
 
 def save_file(data):
-    book = xlrd.open_workbook('programm/template.xls',
+    
+    book = xlrd.open_workbook(os.path.join(APP_DIR, 'template.xls'),
                               on_demand=True, formatting_info=True)
     wb = copy(book)
     ws = wb.get_sheet('Ведомость ФК')
@@ -221,7 +226,7 @@ def save_file(data):
     ws.write(36, 7, class_mark, STYLE_BIG)
 
     try:
-        wb.save('new.xls')
+        wb.save(os.path.join(APP_DIR, 'new.xls'))
     except:
         print('!!!CLOSE FILE!!!\n'*10)
 

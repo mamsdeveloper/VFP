@@ -163,23 +163,22 @@ class CreateScreen(ParentScreen):
         else:
             excel_utils.save_file(data)
 
-
     def change_area(self, instance):
         """
         Change current work area.
         Disable scroll on file settings area
         """
-
-        if instance.name == 'SettingsArea':
-            self.open_write_area_dialog()
-        else:
-            self.children[0].children[-1].clear_widgets()
-            self.area = 'WriteArea'
-            self.write_area.update_area(
-                self.group, self.class_name, self.students, self.exercises)
-            self.children[0].children[-1].do_scroll_y = True
-            self.children[0].children[-1].add_widget(self.write_area)
-            self.children[0].children[-1].scroll_y = 1
+        if self.area != instance.name:
+            if instance.name == 'SettingsArea':
+                self.open_write_area_dialog()
+            else:
+                self.children[0].children[-1].clear_widgets()
+                self.area = 'WriteArea'
+                self.write_area.update_area(
+                    self.group, self.class_name, self.students, self.exercises)
+                self.children[0].children[-1].do_scroll_y = True
+                self.children[0].children[-1].add_widget(self.write_area)
+                self.children[0].children[-1].scroll_y = 1
 
     def update_drop_list(self, drop_list):
         """
@@ -195,15 +194,32 @@ class CreateScreen(ParentScreen):
 
     def update_checkboxes(self, exercises):
         for exercise in exercises:
-            self.settings_area.children[2].add_widget(
+            self.settings_area.children[2].children[0].add_widget(
                 CB(exercise, exercises[exercise]))
 
     def update_exercises(self, instance):
-        self.exercises = {}
-        for cb in instance.children:
-            if cb.children[1].active:
-                self.exercises.update({cb.text: cb.standards})
+        print('Update exercise')
+        if instance.children[1].active:
+            self.exercises.update({instance.text: instance.standards})
 
+            if len(instance.parent.children) == 1:
+                instance.parent.parent.spacing = 0
+            else:
+                instance.parent.parent.spacing = sp(10)
+
+            instance.parent.remove_widget(instance)
+            self.settings_area.children[2].children[1].add_widget(instance)
+        else:
+            self.exercises.pop(instance.text)
+
+            if len(instance.parent.children) == 1:
+                instance.parent.parent.spacing = 0
+            else:
+                instance.parent.parent.spacing = sp(10)
+
+            instance.parent.remove_widget(instance)
+            self.settings_area.children[2].children[0].add_widget(instance)
+        
     def apply_config(self):
         """
         Apply app's config to create screen fields
@@ -558,7 +574,7 @@ class FileWriteArea(ParentArea):
         for student in students:
             self.children[0].add_widget(WriteAreaItem())
             self.children[0].children[0].children[1].text = student
-            for exercise in reversed(exercises):
+            for exercise in exercises:
                 if not exercises[exercise]:
                     continue
 
@@ -847,13 +863,23 @@ class StudentItem(GridLayout):
 class CB(MDGridLayout):
     def __init__(self, text, standards):
         super().__init__()
+        self.st = True
         self.text = text
         self.standards = standards
 
     def on_touch_down(self, touch):
-        super().on_touch_down(touch)
         if self.collide_point(touch.x, touch.y) and not self.children[1].collide_point(touch.x, touch.y):
-            self.children[1].active = not self.children[1].active
+            if self.children[1].active:
+                if self.st:
+                    self.st = False
+                else:
+                    self.children[1].active = False
+                    self.st = True
+            else:
+                self.children[1].active = True
+                self.st = True
+        else:
+            super().on_touch_down(touch)
 
 
 class ExerciseResultItem(MDGridLayout):
