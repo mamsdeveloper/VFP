@@ -1,3 +1,6 @@
+import os
+import sys
+
 from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.config import Config
@@ -7,6 +10,7 @@ from kivy.lang import Builder
 from kivy.metrics import *
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.button import Button
+from kivy.uix.filechooser import FileChooser
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.scrollview import ScrollView
@@ -17,7 +21,7 @@ from kivymd.uix.dialog import MDDialog
 from kivymd.uix.floatlayout import MDFloatLayout
 from kivymd.uix.gridlayout import GridLayout, MDGridLayout
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.selectioncontrol import MDCheckbox
+from kivy.properties import ListProperty
 
 import excel_utils
 from config_utils import *
@@ -75,13 +79,19 @@ class ParentScreen(MDScreen):
                 self.parent.current = 'Settings'
 
         elif instance.name == 'Create':
-            self.parent.switch_to(CreateScreen(name='Create'))
+            # when redirect from home page create new settings screen
+            if self.name == 'Main':
+                self.parent.switch_to(CreateScreen(name='Create'))
+            # when redirect from settings subpages load exist settings page
+            else:
+                self.parent.current = 'Create'
 
         elif instance.name == 'OpenFile':
             self.parent.switch_to(OpenFileScreen(name='OpenFile'))
 
         elif instance.name == 'Update':
-            self.parent.switch_to(UpdateScreen(name='Update'))
+            path = instance.parent.parent.parent.children[1].children[0].selected
+            self.parent.switch_to(CreateScreen(path, name='Update'))
 
         print('@DONE')
 
@@ -91,7 +101,7 @@ class MainScreen(ParentScreen):
 
 
 class CreateScreen(ParentScreen):
-    def __init__(self, **kwargs):
+    def __init__(self, path='', **kwargs):
         """
         Init values that will be used for save statement.
         Create areas, set current area
@@ -99,6 +109,7 @@ class CreateScreen(ParentScreen):
         print('>>> Init Create Screen')
         super().__init__(**kwargs)
         # data
+        self.path = path
         self.dialog = None
         self.school_name = 'None'
         self.teacher = {
@@ -111,12 +122,18 @@ class CreateScreen(ParentScreen):
         self.students = []
         self.exercises = {}
         self.period = ''
-
         self.settings_area = FileSettingsArea()
         self.write_area = FileWriteArea()
-        self.area = 'SettingsArea'
-        self.children[0].children[-1].add_widget(self.settings_area)
-        self.apply_config()
+
+        if self.name == 'Create':
+            self.area = 'SettingsArea'
+            self.children[0].children[-1].add_widget(self.settings_area)
+            self.apply_config()
+        else:
+            self.area = 'WriteArea'
+            self.children[0].children[-1].add_widget(self.write_area)
+            self.load_data()
+
         print('@DONE')
 
     def update_values(self):
@@ -127,23 +144,29 @@ class CreateScreen(ParentScreen):
         self.teacher['rank'] = teacher_list.children[1].text
         self.teacher['post'] = teacher_list.children[0].text
 
-    def save_file(self):
+    def save_file(self, instance):
         """
         Save screen values to statement
         """
         self.update_values()
         data = {}
-        if self.school_name: data.update({'school_name': self.school_name})
-        if self.period: data.update({'period': self.period})
-        if self.teacher: data.update({'teacher': self.teacher})
-        if self.class_name: data.update({'class_name': self.class_name})
-        if self.group: data.update({'group': self.group})
-        if self.exercises: data.update({
-            'exercises': dict(zip(
-                reversed(self.exercises.keys()),
-                (value for value in reversed(self.exercises.values()))
-            ))
-        })
+        if self.school_name:
+            data.update({'school_name': self.school_name})
+        if self.period:
+            data.update({'period': self.period})
+        if self.teacher:
+            data.update({'teacher': self.teacher})
+        if self.class_name:
+            data.update({'class_name': self.class_name})
+        if self.group:
+            data.update({'group': self.group})
+        if self.exercises:
+            data.update({
+                'exercises': dict(zip(
+                    reversed(self.exercises.keys()),
+                    (value for value in reversed(self.exercises.values()))
+                ))
+            })
 
         results = {}
         for student in reversed(self.write_area.children[0].children):
@@ -154,14 +177,17 @@ class CreateScreen(ParentScreen):
                 standard_result = standard.children[0].text
                 student_results.update({standard_name: standard_result})
             results.update({student_name: student_results})
-        if results: data.update({'results': results})
+        if results:
+            data.update({'results': results})
 
         if len(data) < 7:
             Snackbar('Заполните все поля').show()
         elif len(self.exercises) > 3:
             Snackbar('Не больше 3 упражнений.').show()
         else:
-            excel_utils.save_file(data)
+            swipe_direction(self, instance)
+            self.parent.add_widget(SaveFileScreen(data, name='SaveFile'))
+            self.parent.current = 'SaveFile'
 
     def change_area(self, instance):
         """
@@ -172,6 +198,7 @@ class CreateScreen(ParentScreen):
             if instance.name == 'SettingsArea':
                 self.open_write_area_dialog()
             else:
+
                 self.children[0].children[-1].clear_widgets()
                 self.area = 'WriteArea'
                 self.write_area.update_area(
@@ -198,7 +225,6 @@ class CreateScreen(ParentScreen):
                 CB(exercise, exercises[exercise]))
 
     def update_exercises(self, instance):
-        print('Update exercise')
         if instance.children[1].active:
             self.exercises.update({instance.text: instance.standards})
 
@@ -219,7 +245,7 @@ class CreateScreen(ParentScreen):
 
             instance.parent.remove_widget(instance)
             self.settings_area.children[2].children[0].add_widget(instance)
-        
+
     def apply_config(self):
         """
         Apply app's config to create screen fields
@@ -259,6 +285,9 @@ class CreateScreen(ParentScreen):
 
         print('@DONE')
 
+    def load_data(self):
+        pass
+
     def open_write_area_dialog(self):
         ok_button = MDIconButton(
             icon='arrow-left-circle-outline',
@@ -284,51 +313,6 @@ class CreateScreen(ParentScreen):
             self.area = 'SettingsArea'
             self.children[0].children[-1].add_widget(self.settings_area)
         self.dialog.dismiss()
-
-
-class UpdateScreen(ParentScreen):
-    def __init__(self, **kwargs):
-        """
-        Init values that will be used for save statement.
-        Create areas, set current area
-        """
-        print('>>> Init Create Screen')
-        super().__init__(**kwargs)
-        # data
-        self.students = []
-        self.exercises = {}
-
-        self.write_area = FileWriteArea()
-        self.children[0].children[-1].add_widget(self.write_area)
-        self.apply_config()
-        print('@DONE')
-
-    def save_file(self):
-        """
-        Save screen values to statement
-        """
-        data = {}
-        for student in reversed(self.write_area.children[0].children):
-            student_name = student.children[1].text
-            student_results = {}
-            for standard in student.children[0].children:
-                standard_name = standard.children[1].text
-                standard_result = standard.children[0].text
-                student_results.update({standard_name: standard_result})
-            data.update({student_name: student_results})
-        (print(i) for i in data.items())
-
-    def update_exercises(self, instance):
-        self.exercises = {}
-        for cb in instance.children:
-            if cb.children[1].active:
-                self.exercises.update({cb.text: cb.standards})
-
-    def apply_config(self):
-        """
-        Apply opened file data
-        """
-        pass
 
 
 class ViewScreen(ParentScreen):
@@ -513,7 +497,69 @@ class ExerciseScreen(ParentScreen):
 
 
 class OpenFileScreen(ParentScreen):
-    pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.file_manager = FileManager(
+            bg_color=(1, 1, 1, .6),
+            sub_color=(.4, .4, .4, .3),
+            file_filter=['.xls', '.xlsx']
+        )
+        self.children[0].children[-1].add_widget(self.file_manager)
+
+    def on_parent(self, *args):
+        self.children[0].children[-1].children[-1].update()
+
+
+class SaveFileScreen(ParentScreen):
+    def __init__(self, data, **kwargs):
+        super().__init__(**kwargs)
+        self.data = data
+        self.dialog = None
+        self.file_manager = FileManager(
+            bg_color=(1, 1, 1, .6),
+            sub_color=(.4, .4, .4, .3),
+            file_filter=['Hide files']
+        )
+        self.children[0].children[-1].add_widget(self.file_manager)
+
+    def on_parent(self, *args):
+        self.children[0].children[-1].children[-1].update()
+
+    def redirect(self, instance):
+        super().redirect(instance)
+        self.parent.remove_widget(self)
+
+    def save(self):
+        self.open_dialog()
+
+    def open_dialog(self):
+        ok_button = MDIconButton(
+            icon='check',
+            on_press=self.dialog_callback
+        )
+        cancel_button = MDIconButton(
+            icon='close',
+            on_press=self.dialog_callback
+        )
+
+        self.dialog = MDDialog(
+            title='Имя файла',
+            type='custom',
+            content_cls=SimpleTextInput(hint_text='Имя файла'),
+            size_hint=(.8, None),
+            buttons=[ok_button, cancel_button],
+            auto_dismiss=False
+        )
+        self.dialog.open()
+
+    def dialog_callback(self, instance):
+        if instance.icon == 'check':
+            excel_utils.save_file(
+                self.data,
+                self.file_manager.path,
+                self.dialog.content_cls.children[0].text
+            )
+        self.dialog.dismiss()
 
 
 def swipe_direction(self, instance):
@@ -659,7 +705,6 @@ class ExpPanel(MDGridLayout):
         """
         Change state of panel (close or open)
         """
-        print
         # close
         if self.st:
             self.children[1].remove_widget(self.children[1].children[1])
@@ -774,12 +819,12 @@ class DropInput(MDGridLayout):
             self.area.children[0].height = 0
             self.children[-1].children[0].icon = 'menu-right'
             self.get_root_window(
-            ).children[0].current_screen.children[0].children[-1].do_scroll_y = True
+            ).children[-1].current_screen.children[0].children[-1].do_scroll_y = True
         else:
             self.area.children[0].height = '180sp'
             self.children[-1].children[0].icon = 'arrow-down-drop-circle'
             self.get_root_window(
-            ).children[0].current_screen.children[0].children[-1].do_scroll_y = False
+            ).children[-1].current_screen.children[0].children[-1].do_scroll_y = False
 
         self.st = not self.st
 
@@ -828,13 +873,17 @@ class DropListItem(Button):
 class TunedTextInput(TextInput):
     def adopt_scroll(self):
         area_h = self.get_root_window(
-        ).children[0].current_screen.children[0].children[-1].children[0].height
+        ).children[-1].current_screen.children[0].children[-1].children[0].height
         scroll_h = self.get_root_window(
-        ).children[0].current_screen.children[0].children[-1].height
+        ).children[-1].current_screen.children[0].children[-1].height
 
         if self.focus and area_h > scroll_h:
             self.get_root_window(
-            ).children[0].current_screen.children[0].children[-1].scroll_to(self)
+            ).children[-1].current_screen.children[0].children[-1].scroll_to(self)
+
+
+class SimpleTextInput(FloatLayout):
+    pass
 
 
 class StudentsList(MDGridLayout):
@@ -917,6 +966,88 @@ class Snackbar(MDFloatLayout):
             on_complete=lambda *args: Clock.schedule_interval(wait_interval, 0)
         )
         anim.start(self.ids.box)
+
+
+class FileManager(MDGridLayout):
+    def __init__(self, path=None, bg_color=(1, 1, 1, 1), sub_color=(0, 0, 0, 1), file_filter=[]):
+        super().__init__()
+        self.bg_color = bg_color
+        self.sub_color = sub_color
+        if sys.platform == 'linux':
+            self.path = '/storage/emulated/0/'
+        else:
+            self.path = 'C:/Coding/VFP/programm'
+        self.file_filter = file_filter
+        self.selected = ''
+
+    def update(self, *args):
+        try:
+            self.width = self.get_root_window().width
+            self.update_widgets()
+        except:
+            pass
+
+    def update_widgets(self):
+        try:
+            self.children[0].children[0].clear_widgets()
+            list_dir = os.listdir(self.path)
+            items_list = []
+            for file in list_dir:
+                if os.path.isdir(self.path + file):
+                    items_list.append((file, 'dir'))
+                else:
+                    if self.file_filter:
+                        p, e = os.path.splitext(file)
+                        if e in self.file_filter:
+                            items_list.append((file, 'file'))
+                    else:
+                        items_list.append((file, 'file'))
+
+            items_list.sort(key=lambda x: x[1] == 'file')
+            for item in items_list:
+                self.children[0].children[0].add_widget(
+                    FileManagerItem(self.width * .18, item[0], item[1]))
+
+            if self.children[0].children[0].children:
+                self.children[0].scroll_y = 1
+        except PermissionError:
+            pass
+
+    def turn_back(self):
+        try:
+            if len(self.path.split('/')) > 2:
+                self.path = '/'.join(self.path.split('/')[:-2]) + '/'
+                self.update_widgets()
+        except PermissionError:
+            pass
+
+    def select(self, instance):
+        if instance.tp == 'file':
+            self.selected = self.path + instance.name
+            for item in self.children[0].children[0].children:
+                if self.path + item.name == self.selected:
+                    item.children[1].children[0].st = True
+                else:
+                    item.children[1].children[0].st = False
+        else:
+            self.path = self.path + instance.name + '/'
+            self.update_widgets()
+
+
+class FileManagerItem(MDGridLayout):
+    def __init__(self, font_size, name, tp):
+        super().__init__()
+        self.name = name
+        self.tp = tp
+        if self.tp == 'dir':
+            self.icon = 'folder-outline'
+        else:
+            if [e for e in ('.xls', 'xlsx') if e in self.name]:
+                self.icon = 'file-table-outline'
+            else:
+                self.icon = 'file-document-outline'
+
+        self.font_size = font_size
 
 
 #

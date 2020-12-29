@@ -8,7 +8,8 @@ import xlwt
 from xlutils.copy import copy
 
 
-APP_DIR = sys.path[0] or os.path.dirname(os.path.realpath(sys.argv[0])) or os.getcwd()
+APP_DIR = sys.path[0] or os.path.dirname(
+    os.path.realpath(sys.argv[0])) or os.getcwd()
 
 FONT_USUAL = xlwt.Font()
 FONT_USUAL.name = 'Times New Roman'
@@ -122,24 +123,23 @@ def calculate_total_mark(marks):
 
 def calculate_class_mark(q, class_marks):
     marks_count = Counter(class_marks)
-    e = marks_count[5] / len(class_marks)*100 # "5"
-    g = marks_count[4] / len(class_marks)*100 # "4"
-    s = marks_count[3] / len(class_marks)*100 # "3"
+    e = marks_count[5] / len(class_marks)*100 if len(class_marks) else 0  # "5"
+    g = marks_count[4] / len(class_marks)*100 if len(class_marks) else 0  # "4"
+    s = marks_count[3] / len(class_marks)*100 if len(class_marks) else 0  # "3"
     p = sum((e, g, s))  # plus marks
 
     print(e, g, s, p, q)
     if e > 50 and p >= 95 and q >= 80:
         return '5'
-    elif e+g > 50 and p >= 90 and q>= 75:
+    elif e+g > 50 and p >= 90 and q >= 75:
         return '4'
-    elif p >= 85 and q>= 70:
+    elif p >= 85 and q >= 70:
         return '3'
     else:
         return '2'
-    
 
-def save_file(data):
-    
+
+def save_file(data, path, name):
     book = xlrd.open_workbook(os.path.join(APP_DIR, 'template.xls'),
                               on_demand=True, formatting_info=True)
     wb = copy(book)
@@ -197,7 +197,8 @@ def save_file(data):
     ws.write(32, 4, round(len(data['results']) / 20 * 100, 1), STYLE_CENTER)
     # all-marks-student quantity
     ws.write(33, 2, len(class_marks), STYLE_CENTER)
-    quantity = round(len(class_marks) / len(data['results'])*100, 1)
+    quantity = round(len(class_marks) /
+                     len(data['results'])*100, 1) if len(data['results']) else 0
     ws.write(33, 4, quantity, STYLE_CENTER)
     # marks species
     marks_count = Counter(class_marks)
@@ -207,27 +208,37 @@ def save_file(data):
     unsatisfactory = marks_count[2]
 
     ws.write(35, 2, excellent, STYLE_CENTER)
-    ws.write(35, 4, round(excellent / len(class_marks) * 100, 1), STYLE_CENTER)
+    value = excellent / len(class_marks) * 100 if len(class_marks) else 0
+    ws.write(35, 4, round(value, 1), STYLE_CENTER)
+
     ws.write(36, 2, good, STYLE_CENTER)
-    ws.write(36, 4, round(good / len(class_marks) * 100, 1), STYLE_CENTER)
+    value = good / len(class_marks) * 100 if len(class_marks) else 0
+    ws.write(36, 4, round(value, 1), STYLE_CENTER)
+
     ws.write(37, 2, satisfactory, STYLE_CENTER)
-    ws.write(37, 4, round(satisfactory / len(class_marks) * 100, 1), STYLE_CENTER)
+    value = satisfactory / len(class_marks) * 100 if len(class_marks) else 0
+    ws.write(37, 4, round(value, 1), STYLE_CENTER)
+
     ws.write(38, 2, unsatisfactory, STYLE_CENTER)
-    ws.write(38, 4, round(unsatisfactory /
-                          len(class_marks) * 100, 1), STYLE_CENTER)
+    value = unsatisfactory / len(class_marks) * 100 if len(class_marks) else 0
+    ws.write(38, 4, round(value, 1), STYLE_CENTER)
+
     plus_marks = sum((excellent, good, satisfactory))
     ws.write(39, 2, plus_marks, STYLE_CENTER)
-    ws.write(39, 4, round(plus_marks / len(class_marks) * 100, 1), STYLE_CENTER)
-    ws.write(40, 2, len(data['results'])-len(class_marks), STYLE_CENTER)
-    ws.write(40, 4, round(
-        (len(data['results']) - len(class_marks)) / len(data['results'])* 100, 1), STYLE_CENTER)
-        
+    value = plus_marks / len(class_marks) * 100 if len(class_marks) else 0
+    ws.write(39, 4, round(value, 1), STYLE_CENTER)
+    
+    ws.write(40, 2, len(data['results']) - len(class_marks), STYLE_CENTER)
+    value = (len(data['results']) - len(class_marks)) / \
+        len(data['results']) * 100 if len(class_marks) else 0
+    ws.write(40, 4, round(value, 1), STYLE_CENTER)
+
     class_mark = calculate_class_mark(quantity, class_marks)
     ws.write(36, 7, class_mark, STYLE_BIG)
 
     try:
-        wb.save(os.path.join(APP_DIR, 'new.xls'))
-    except:
+        wb.save(os.path.join(APP_DIR, path+name+'.xls' if name else path+'new.xls'))
+    except PermissionError:
         print('!!!CLOSE FILE!!!\n'*10)
 
 

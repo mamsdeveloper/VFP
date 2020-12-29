@@ -1,4 +1,4 @@
-#:import platform sys.platform
+#: import platform sys.platform
 #
 # Screens
 #
@@ -40,7 +40,7 @@
     do_scroll_x: False
     canvas.before:
         Color:
-            rgba: 1, 1, 1, .6
+            rgba: (1, 1, 1, .6)
         RoundedRectangle:
             pos: self.pos
             size: self.size
@@ -203,6 +203,7 @@
     MDGridLayout:
         cols: 1
         adaptive_height: True
+        height: 0 
         spacing: 0
 
         MDGridLayout:
@@ -236,18 +237,16 @@
         cols: 1
         adaptive_height: True
         spacing: sp(12)
-
-
-#@@@@@@@
-<FileViewArea>:
 #
 # Area"s items
 #
 <SimpleLabel@MDLabel>:
     padding: [sp(5), 0]
-    size_hint_y: None
-    height: self.font_size
+    text_size: self.texture_size
     font_size: sp(22)
+    size_hint_y: None
+    height: self.texture_size[1]
+    shorten: True
 
 
 #@@@@@@@
@@ -270,7 +269,7 @@
 
 
 #@@@@@@@
-<SimpleTextInput@FloatLayout>:
+<SimpleTextInput>:
     size_hint_y: None
     height: sp(40)
     hint_text: ""
@@ -342,7 +341,7 @@
         size_hint: None, None
         size: sp(22), sp(22)
         pos_hint: {"center_x": .5, "center_y": .5}
-        on_active: self.get_root_window().children[0].current_screen.update_exercises(root)
+        on_active: self.get_root_window().children[-1].current_screen.update_exercises(root)
     
     MDLabel:
         text: root.text
@@ -425,6 +424,100 @@
             pos_hint: {'center_y': .5}
 
 
+#@@@@@@@
+<FileManager>:
+    bg_color: (1, 1, 1, 1)
+    sub_color: (0, 0, 0, 1)
+    path: ''
+    cols: 1
+    spacing: self.width // 20
+
+    canvas.before:
+        Color:
+            rgba: root.bg_color
+        RoundedRectangle:
+            pos: root.pos
+            size: root.size
+            radius: [sp(10)]
+
+    MDGridLayout:
+        cols: 2
+        size_hint_y: None
+        adaptive_height: True
+        padding: [0, 0, root.width // 25, 0]
+        spacing: root.width // 50
+
+        canvas.before:
+            Color:
+                rgba: root.sub_color
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [sp(10), sp(10), 0, 0]
+
+        FloatLayout:
+            size_hint: None, None
+            size: root.width*.2, root.width*.2
+            MDIconButton:
+                pos_hint: {"center_x": .5, "center_y": .5}
+                icon: 'arrow-left'
+                user_font_size: root.width*.1
+                on_release:  root.turn_back()
+
+        MDLabel:
+            size_hint_x: .7
+            shorten: True
+            font_size: root.width // 20
+            text: root.path
+
+    ScrollView:
+        MDGridLayout:
+            cols: 2
+            size_hint: 1, None
+            height: self.minimum_height
+            spacing: self.width // 15
+
+
+#@@@@@@@
+<FileManagerItem>:
+    cols: 1
+    adaptive_height: True
+    name: ''
+    icon: 'error'
+    font_size: 10
+    spacing: self.font_size // 10
+
+    AnchorLayout:
+        anchor_x: 'center'
+        size_hint_y: None
+        height: root.font_size
+
+        MDIconButton:
+            st: False
+            user_font_size: root.font_size
+            icon: root.icon
+            on_release: root.parent.parent.parent.select(root)
+
+            canvas.before:
+                Color:
+                    rgba: (1, 1, 1, .7) if self.st else (0, 0, 0, 0)
+                RoundedRectangle:
+                    pos: self.x + self.height//2-self.user_font_size*1.1//2, self.y + self.width//2-self.user_font_size*1.1//2
+                    size: self.user_font_size*1.1, self.user_font_size*1.1
+                    radius: [self.height*.2]
+
+    
+    AnchorLayout:
+        anchor_x: 'center'
+        size_hint: .5, None
+        height: root.font_size // 4
+        
+        MDLabel:
+            size_hint_x: .8
+            shorten: True
+            halign: 'center'
+            font_size: root.font_size // 4
+            text: root.name
 #
 # Custom Expansion Panel
 #
@@ -708,12 +801,6 @@
 
             FloatLayout:
                 NavItem:
-                    name: "View" 
-                    icon: "view-list"
-                    on_release: root.redirect(self)
-
-            FloatLayout:
-                NavItem:
                     name: "Settings" 
                     # !!!WARNING!!!                    
                     icon: "settings" if platform == "linux" else "cog" # remove on prodaction
@@ -758,7 +845,7 @@
             FloatLayout:
                 NavItem:
                     icon: "content-save" 
-                    on_release: root.save_file()
+                    on_release: root.save_file(self)
         
             FloatLayout:
                 NavItem:
@@ -825,24 +912,17 @@
                         root.parent.update_settings_standards(root.title, root.standards)
 #
 # OpenFileScreen
-#
+# 
 <OpenFileScreen>:
     ScreenBox:
-        FileChooserIconView:
-            on_selection: print(self.selection)
-            canvas.before:
-                Color:
-                    rgba: 0, 0, 0, .5
-                RoundedRectangle:
-                    # pos: self.pos
-                    size: self.size
-                    radius: [sp(10)]
-            
+        MDGridLayout:
+            cols: 1
+
         Nav:
             FloatLayout:
                 NavItem: 
                     name: "Update"
-                    icon: "check-circle"
+                    icon: "file-check"
                     on_release: root.redirect(self)
 
             FloatLayout:
@@ -850,31 +930,22 @@
                     name: "Main" 
                     icon: "home" 
                     on_release: root.redirect(self)
-
-
 #
-# Create Screen
+# SaveFileScreen
 #
-<UpdateScreen>:
+<SaveFileScreen>:
     ScreenBox:
-        AreaScroll:  
+        MDGridLayout:
+            cols: 1
 
-        Nav:    
+        Nav:
             FloatLayout:
                 NavItem:
-                    name: "Main"
-                    icon: "delete" 
-                    on_release: pass
-
-            FloatLayout:
-                NavItem:
-                    icon: "content-save" 
-                    on_release: root.save_file()
-
-            FloatLayout:
-                NavItem:
-                    name: "Main"
-                    icon: "home" 
+                    name: "Create" 
+                    icon: "arrow-left-circle-outline" 
                     on_release: root.redirect(self)
             
-            
+            FloatLayout:
+                NavItem: 
+                    icon: "content-save"
+                    on_release: root.save()
