@@ -162,12 +162,6 @@
 # area with file settings as school name, teacher and other
 <FileSettingsArea>:
     SimpleLabel:
-        text: "Название организации:"
-        
-    SimpleTextInput:
-        hint_text: "Название организации"
-
-    SimpleLabel:
         text: "Период сдачи:"
         
     SimpleTextInput:
@@ -227,6 +221,39 @@
 
     DropInput:
     
+
+#@@@@@@@
+<FileSettingsShortenArea>:
+    SimpleLabel:
+        text: "Период сдачи:"
+        
+    SimpleTextInput:
+        hint_text: "Период сдачи:"
+
+    SimpleLabel:
+        text: "Преподаватель:"
+
+    MDGridLayout:
+        cols: 1
+        spacing: sp(12)
+        adaptive_height: True
+        canvas.before:
+            Color:
+                rgba: 0, 0, 0, .15
+            RoundedRectangle:
+                pos: self.pos
+                size: self.size
+                radius: [sp(8)]
+        
+        SimpleTextInput:
+            hint_text: "ФИО"
+
+        SimpleTextInput:
+            hint_text: "Звание"
+
+        SimpleTextInput:
+            hint_text: "Должность"
+  
 
 #@@@@@@@
 <FileWriteArea>:
@@ -431,6 +458,7 @@
     path: ''
     cols: 1
     spacing: self.width // 20
+    padding: [0, 0, 0, self.width // 20]
 
     canvas.before:
         Color:
@@ -679,8 +707,19 @@
 <DropInputDropArea>:
     anchor_x: "right"
     size_hint_y: None
-    height: sp(180)
+    height: sp(190)
+    padding: [0, sp(7)]
+    opacity: 0
+    
+    canvas.before:
+        Color: 
+            rgba: 0, 0, 0, .15
+        RoundedRectangle:
+            pos: self.x+self.width*.5, self.y
+            size: self.width*.5, self.height
+            radius: [0, sp(7), sp(7), sp(7)]
 
+    DropInputScroll:
 
 #@@@@@@@ 
 <DropInputScroll>:
@@ -688,28 +727,18 @@
     bar_width: sp(5)
     bar_color: (.4, .4, .4, 1)
     size_hint: None, None
-    height: sp(180)
+    height: 0
     width: self.parent.width*.5 if self.parent else 0
     effect_cls: "ScrollEffect"
 
-    canvas.before:
-        Color: 
-            rgba: 0, 0, 0, .15
-        RoundedRectangle:
-            pos: self.pos
-            size: self.size 
-            radius: [0, sp(7), sp(7), sp(7)]
-    
     DropInputItemsList:
     
 
 #@@@@@@@
-<DropInputItemsList@GridLayout>:
+<DropInputItemsList@MDGridLayout>:
     cols: 1
-    height: self.minimum_height
-    size_hint_y: None
+    adaptive_height: True
     spacing: sp(10)
-    padding: [0, sp(10), 0, 0] 
 
 
 #@@@@@@@
@@ -809,7 +838,54 @@
 # Create Screen
 #
 <CreateScreen>:
-    area: "SettingsScreen"
+    area: "SettingsArea"
+
+    ScreenBox:
+        spacing: 0
+        AreaScroll:  
+
+        # Sub Nav
+        BoxLayout:
+            size_hint_y: None
+            height: sp(15)
+            NavSub:
+                name: "SettingsArea"
+
+            NavSub:
+                name: "WriteArea"
+
+            NavSubEmpty:
+
+            NavSubEmpty:
+
+        Nav:
+            FloatLayout:
+                NavItem: 
+                    name: "SettingsArea"
+                    icon: "wrench"
+                    on_release: root.change_area(self)
+                
+            FloatLayout:
+                NavItem:
+                    name: "WriteArea"
+                    icon: "view-list" 
+                    on_release: root.change_area(self)
+
+            FloatLayout:
+                NavItem:
+                    icon: "content-save" 
+                    on_release: root.save_file(self)
+        
+            FloatLayout:
+                NavItem:
+                    name: "Main"
+                    icon: "home" 
+                    on_release: root.redirect(self)
+#
+# Create Screen
+#
+<UpdateScreen>:
+    area: "WriteArea"
 
     ScreenBox:
         spacing: 0
@@ -941,7 +1017,7 @@
         Nav:
             FloatLayout:
                 NavItem:
-                    name: "Create" 
+                    name: "Update" if app.root_window.children[-1].current_screen.name == 'Update' else 'Create'
                     icon: "arrow-left-circle-outline" 
                     on_release: root.redirect(self)
             

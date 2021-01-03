@@ -1,3 +1,5 @@
+__all__ = ['save_config', 'get_config']
+
 def get_config_path():
     import os, sys
     app_dir = sys.path[0] or os.path.dirname(os.path.realpath(sys.argv[0])) or os.getcwd()
@@ -64,7 +66,6 @@ def save_config(self):
         # add classes in group
         for item in reversed(exp.items_list.children):
             group_name = item.children[1].children[1].text
-            print(group_name)
             # validate
             if not group_name:
                 continue

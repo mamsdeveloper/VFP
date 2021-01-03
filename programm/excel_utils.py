@@ -128,7 +128,6 @@ def calculate_class_mark(q, class_marks):
     s = marks_count[3] / len(class_marks)*100 if len(class_marks) else 0  # "3"
     p = sum((e, g, s))  # plus marks
 
-    print(e, g, s, p, q)
     if e > 50 and p >= 95 and q >= 80:
         return '5'
     elif e+g > 50 and p >= 90 and q >= 75:
@@ -139,7 +138,7 @@ def calculate_class_mark(q, class_marks):
         return '2'
 
 
-def save_file(data, path, name):
+def save_file(data, path, filename):
     book = xlrd.open_workbook(os.path.join(APP_DIR, 'template.xls'),
                               on_demand=True, formatting_info=True)
     wb = copy(book)
@@ -189,7 +188,6 @@ def save_file(data, path, name):
         ws.write(10 + i, 8, total_mark, STYLE_CENTER)
 
     class_marks = list(map(int, [mark for mark in class_marks if mark]))
-    print(class_marks)
 
     # outcome
     # students quantity
@@ -227,7 +225,7 @@ def save_file(data, path, name):
     ws.write(39, 2, plus_marks, STYLE_CENTER)
     value = plus_marks / len(class_marks) * 100 if len(class_marks) else 0
     ws.write(39, 4, round(value, 1), STYLE_CENTER)
-    
+
     ws.write(40, 2, len(data['results']) - len(class_marks), STYLE_CENTER)
     value = (len(data['results']) - len(class_marks)) / \
         len(data['results']) * 100 if len(class_marks) else 0
@@ -237,42 +235,53 @@ def save_file(data, path, name):
     ws.write(36, 7, class_mark, STYLE_BIG)
 
     try:
-        wb.save(os.path.join(APP_DIR, path+name+'.xls' if name else path+'new.xls'))
+        name = filename + '.xls' if filename else 'new.xls'
+        wb.save(os.path.join(APP_DIR, '/'.join((path, name))))
     except PermissionError:
         print('!!!CLOSE FILE!!!\n'*10)
 
 
-if __name__ == "__main__":
-    save_file({
-        'school_name': 'ТПКУ',
-        'period': '1 Period',
-        'teacher': {
-            'name': 'Матвеев М.И.',
-            'rank': 'Старший лейтенант',
-            'post': 'Преподаватель'
-        },
-        'class_name': '5 а',
-        'group': '1 Курс (5 Класс)',
-        'exercises': {
-            'Упр. №3 Подтягивание': [['1 Курс (5 Класс)', ['13', '10', '8']], ['2 Курс (6 Класс)', ['15', '13', '11']]],
-            'Упр. №29 Бег на 60м': [['1 Курс (5 Класс)', ['9.00', '10.5', '11.00']]],
-            'Упр. №27 Бег на 1000м': [['1 Курс (5 Класс)', ['12:00', '12:30', '13:00']]],
-        },
-        'results': {
-            'Васильев': {'Упр. №3 Подтягивание': '12', 'Упр. №29 Бег на 60м': 'Б', 'Упр. №27 Бег на 1000м': '4:50', },
-            'Иванов': {'Упр. №3 Подтягивание': '32', 'Упр. №29 Бег на 60м': '10.4', 'Упр. №27 Бег на 1000м': '64:30', },
-            'Кузнецов': {'Упр. №3 Подтягивание': '22', 'Упр. №29 Бег на 60м': '11.5', 'Упр. №27 Бег на 1000м': '23:10', },
-            'Петров': {'Упр. №3 Подтягивание': '12', 'Упр. №29 Бег на 60м': '9.1', 'Упр. №27 Бег на 1000м': '12:30', },
-            'Попов': {'Упр. №3 Подтягивание': '1', 'Упр. №29 Бег на 60м': '12.4', 'Упр. №27 Бег на 1000м': '11:40', },
-            'Смирнов': {'Упр. №3 Подтягивание': '442', 'Упр. №29 Бег на 60м': '11.7', 'Упр. №27 Бег на 1000м': '12:40', },
-            'Соколов': {'Упр. №3 Подтягивание': '2', 'Упр. №29 Бег на 60м': '8.4', 'Упр. №27 Бег на 1000м': '333:40', },
-            'Табаков': {'Упр. №3 Подтягивание': '12', 'Упр. №29 Бег на 60м': '', 'Упр. №27 Бег на 1000м': '4:50', },
-            'Иванов': {'Упр. №3 Подтягивание': '8', 'Упр. №29 Бег на 60м': '10.4', 'Упр. №27 Бег на 1000м': '4:30', },
-            'Хабалов': {'Упр. №3 Подтягивание': '22', 'Упр. №29 Бег на 60м': '11.5', 'Упр. №27 Бег на 1000м': '23:10', },
-            'Цапко': {'Упр. №3 Подтягивание': '9', 'Упр. №29 Бег на 60м': '9.8', 'Упр. №27 Бег на 1000м': '12:30', },
-            'Чаадаев': {'Упр. №3 Подтягивание': '1', 'Упр. №29 Бег на 60м': '12.4', 'Упр. №27 Бег на 1000м': '11:40', },
-            'Чепаев': {'Упр. №3 Подтягивание': '442', 'Упр. №29 Бег на 60м': '11.7', 'Упр. №27 Бег на 1000м': '12:40', },
-            'Яковлев': {'Упр. №3 Подтягивание': '2', 'Упр. №29 Бег на 60м': '8.4', 'Упр. №27 Бег на 1000м': '3:40', }
-        }
+def load_file(path):
+    wb = xlrd.open_workbook(path)
+    ws = wb.sheet_by_index(0)
+
+    # school name
+    school_name = ws.cell(0, 0).value
+    # period
+    period = ws.cell(3, 0).value
+    # class
+    class_name = ws.cell(4, 0).value
+    # teacher
+    teacher_post = ws.cell(42, 0).value
+    try:
+        teacher_rank, teacher_name = ws.cell(43, 0).value.split(' ' + '_' * 12 + ' ')
+    except ValueError:
+        teacher_rank, teacher_name = '', ''
+        
+    teacher = {
+        'name': teacher_name,
+        'post': teacher_post,
+        'rank': teacher_rank
     }
-    )
+    # exercises
+    exercises = []
+    for i in range(2, 6+1, 2):
+        exercise_name = ' '.join((ws.cell(6, i).value, ws.cell(7, i).value))
+        exercises.append(exercise_name)
+    # results
+    results = {}
+    for i in range(10, 30 + 1):
+        if value := ws.cell(i, 1).value:
+            results.update({value: {}})
+            for j in range(2, 6 + 1, 2):
+                results[value].update({exercises[j//2-1]: ws.cell(i, j).value})
+
+    return {
+        'school_name': school_name,
+        'period': period,
+        'teacher': teacher,
+        'class_name': class_name,
+        'exercises': exercises,
+        'results': results,
+    }
+
