@@ -143,7 +143,7 @@ class FileChangeScreen():
         self.teacher['name'] = teacher_list.children[2].text
         self.teacher['rank'] = teacher_list.children[1].text
         self.teacher['post'] = teacher_list.children[0].text
-        
+
     def save_file(self, instance):
         """
         Save screen values to statement
@@ -371,7 +371,7 @@ class UpdateScreen(ParentScreen, FileChangeScreen):
         try:
             self.load_data()
         except:
-            Snackbar('Что-то не так с данными').show()  
+            Snackbar('Что-то не так с данными').show()
         print('@DONE')
 
     def change_area(self, instance):
@@ -418,7 +418,8 @@ class UpdateScreen(ParentScreen, FileChangeScreen):
 
         for exercise in data['exercises']:
             if exercise in config['exercises'].keys():
-                self.exercises.update({exercise: config['exercises'][exercise]})
+                self.exercises.update(
+                    {exercise: config['exercises'][exercise]})
 
         self.write_area.update_area(
             self.group,
@@ -457,14 +458,13 @@ class SettingsScreen(ParentScreen):
 
     def update_exps(self, name, exps):
         """
-        Update exppanels values by class' exps' list
+        Update exppanels values by class exps list
         """
         if name == 'classes_exps':
             self.classes_exps = exps.copy()
             self.children[0].children[1].children[0].children[4].clear_widgets()
             for exp in self.classes_exps:
-                self.children[0].children[1].children[0].children[4].add_widget(
-                    exp)
+                self.children[0].children[1].children[0].children[4].add_widget(exp)
         else:
             self.exercises_exps = exps.copy()
             self.children[0].children[1].children[0].children[1].clear_widgets()
@@ -691,8 +691,8 @@ class SaveFileScreen(ParentScreen):
                 self.dialog.content_cls.children[0].text
             )
             self.redirect(instance)
-        
-        
+
+
 def swipe_direction(self, instance):
     """
     Change swipe direction of SM on right or left in relation to touch pos
@@ -758,7 +758,7 @@ class FileWriteArea(ParentArea):
             for exercise in exercises:
                 if not exercises[exercise]:
                     continue
-                    
+
                 if any([i[0] == group for i in exercises[exercise]]):
                     self.children[0].children[0].children[0].add_widget(
                         ExerciseResultItem())
@@ -797,11 +797,7 @@ class ExpsList(MDGridLayout):
     def close_all(self):
         for exp in self.children:
             if exp.st:
-                exp.children[1].remove_widget(exp.items_list)
-                exp.children[1].remove_widget(exp.children[1].children[0])
-                exp.children[1].children[0].children[0].icon = 'menu-right'
-                exp.st = False
-        self.update_exps()
+                exp.change_state()
 
     def update_exps(self):
         exps = []
@@ -828,7 +824,13 @@ class ExpPanel(MDGridLayout):
         # add first item, items list and add-button in box
         self.placeholder = placeholder
         self.children[1].add_widget(ExpPanelFirstItem(self.placeholder))
+        self.children[1].add_widget(self.items_list)
+        self.children[1].add_widget(ExpPanelAddButton())
 
+        self.children[1].children[1].size_hint_y = 0
+        self.children[1].children[1].opacity = 0
+        self.children[1].children[0].height = 0
+        self.children[1].children[0].opacity = 0
         # self close/open state
         self.st = False
 
@@ -838,18 +840,24 @@ class ExpPanel(MDGridLayout):
         """
         # close
         if self.st:
-            self.children[1].remove_widget(self.children[1].children[1])
-            self.children[1].remove_widget(self.children[1].children[0])
-            self.children[1].children[0].children[0].icon = 'menu-right'
+            self.children[1].children[1].size_hint_y = 0
+            self.children[1].children[1].opacity = 0
+            self.children[1].children[0].height = 0
+            self.children[1].children[0].opacity = 0
+
+            self.children[1].children[2].children[0].icon = 'menu-right'
         # open
         else:
             self.parent.close_all()
-            self.children[1].add_widget(self.items_list)
-            self.children[1].add_widget(ExpPanelAddButton())
+            self.children[1].children[1].size_hint_y = None
+            self.children[1].children[1].height = self.children[1].children[1].minimum_height
+            self.children[1].children[1].opacity = 1
+            self.children[1].children[0].height = sp(40)
+            self.children[1].children[0].opacity = 1
+
             self.children[1].children[2].children[0].icon = 'arrow-down-drop-circle'
 
         self.st = not self.st
-        self.parent.update_exps()
 
 
 class ExpPanelBox(MDGridLayout):
@@ -1045,7 +1053,7 @@ class CB(MDGridLayout):
         self.text = text
         self.standards = standards
 
-    def on_touch_down(self, touch):
+    def on_touch_up(self, touch):
         if self.collide_point(touch.x, touch.y) and not self.children[1].collide_point(touch.x, touch.y):
             if self.children[1].active:
                 if self.st:
@@ -1057,7 +1065,7 @@ class CB(MDGridLayout):
                 self.children[1].active = True
                 self.st = True
         else:
-            super().on_touch_down(touch)
+            super().on_touch_up(touch)
 
 
 class ExerciseResultItem(MDGridLayout):
@@ -1112,13 +1120,14 @@ class FileManager(MDGridLayout):
     def update(self, *args):
         try:
             self.width = self.get_root_window().width
-            self.update_widgets()
-        except:
+        except AttributeError:
             pass
 
+        self.update_widgets()
+
     def update_widgets(self):
+        self.children[0].children[0].clear_widgets()
         try:
-            self.children[0].children[0].clear_widgets()
             list_dir = os.listdir(self.path)
             items_list = []
             for file in list_dir:
@@ -1131,21 +1140,21 @@ class FileManager(MDGridLayout):
                             items_list.append((file, 'file'))
                     else:
                         items_list.append((file, 'file'))
-
             items_list.sort(key=lambda x: x[1] == 'file')
             for item in items_list:
                 self.children[0].children[0].add_widget(
                     FileManagerItem(self.width * .18, item[0], item[1]))
-
-            if self.children[0].children[0].children:
-                self.children[0].scroll_y = 1
         except PermissionError:
             pass
 
+        if self.children[0].children[0].children:
+            self.children[0].scroll_y = 1
+
     def turn_back(self):
         try:
-            if len(self.path.split('/')) > 2:
+            if len(self.path.split('/')) > 2 and self.path != '/storage/emulated/0/':
                 self.path = '/'.join(self.path.split('/')[:-2]) + '/'
+                self.selected = ''
                 self.update_widgets()
         except PermissionError:
             pass
@@ -1155,11 +1164,12 @@ class FileManager(MDGridLayout):
             self.selected = self.path + instance.name
             for item in self.children[0].children[0].children:
                 if self.path + item.name == self.selected:
-                    item.children[1].children[0].st = True
+                    item.children[1].st = True
                 else:
-                    item.children[1].children[0].st = False
+                    item.children[1].st = False
         else:
             self.path = self.path + instance.name + '/'
+            self.selected = ''
             self.update_widgets()
 
 
@@ -1182,16 +1192,14 @@ class FileManagerItem(MDGridLayout):
 #
 # Application
 #
-class VFP(MDApp):
+class App(MDApp):
     def build(self):
         """
         Set app's values: title, icon, theme.
         Create and return ScreenManager
         """
-        self.title = 'ВФП'
-        self.icon = 'logo.png'
+        Builder.load_file('VFP.kv')
         self.theme_cls.primary_palette = 'Gray'
-
         sm = AppScreenManager()
         sm.add_widget(MainScreen(name='Main'))
         sm.current = 'Main'
@@ -1203,7 +1211,7 @@ class VFP(MDApp):
 def main():
     Clock.max_iteration = 1000
     Window.softinput_mode = 'below_target'
-    app = VFP()
+    app = App()
     app.run()
 
 

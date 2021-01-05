@@ -519,22 +519,21 @@
         anchor_x: 'center'
         size_hint_y: None
         height: root.font_size
+        st: False
+        canvas.before:
+            Color:
+                rgba: (1, 1, 1, .7) if self.st else (0, 0, 0, 0)
+            RoundedRectangle:
+                pos: self.x+self.width*.5-self.height*.5, self.y
+                size: self.height, self.height
+                radius: [self.height*.2]
 
         MDIconButton:
-            st: False
+            size: self.parent.height, self.parent.height
             user_font_size: root.font_size
             icon: root.icon
             on_release: root.parent.parent.parent.select(root)
 
-            canvas.before:
-                Color:
-                    rgba: (1, 1, 1, .7) if self.st else (0, 0, 0, 0)
-                RoundedRectangle:
-                    pos: self.x + self.height//2-self.user_font_size*1.1//2, self.y + self.width//2-self.user_font_size*1.1//2
-                    size: self.user_font_size*1.1, self.user_font_size*1.1
-                    radius: [self.height*.2]
-
-    
     AnchorLayout:
         anchor_x: 'center'
         size_hint: .5, None
