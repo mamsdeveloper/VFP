@@ -68,7 +68,7 @@ class ParentScreen(MDScreen):
         swipe_direction(self, instance)  # change swipe mod (left or right)
 
         if instance.name == 'Main':
-            if self.name == 'OpenFile':
+            if self.name in ('OpenFile', 'SaveFile'):
                 self.parent.switch_to(MainScreen(name='Main'))
             else:
                 self.open_dialog()
@@ -664,12 +664,12 @@ class SaveFileScreen(ParentScreen):
     def open_save_file_dialog(self):
         ok_button = MDIconButton(
             icon='check',
-            on_press=self.dialog_callback
+            on_press=self.save_file_dialog_callback
         )
         ok_button.__setattr__('name', 'Main')
         cancel_button = MDIconButton(
             icon='close',
-            on_press=self.dialog_callback
+            on_press=self.save_file_dialog_callback
         )
 
         self.dialog = MDDialog(
@@ -685,11 +685,17 @@ class SaveFileScreen(ParentScreen):
     def save_file_dialog_callback(self, instance):
         self.dialog.dismiss()
         if instance.icon == 'check':
-            excel_utils.save_file(
+            is_save = excel_utils.save_file(
                 self.data,
                 self.file_manager.path,
                 self.dialog.content_cls.children[0].text
             )
+            
+            if is_save:
+                Snackbar('Файл сохранен').show()
+            else:
+                Snackbar('Ошибка сохранения').show()
+                
             self.redirect(instance)
 
 
@@ -697,7 +703,7 @@ def swipe_direction(self, instance):
     """
     Change swipe direction of SM on right or left in relation to touch pos
     """
-    if instance.pos[0] <= self.width/2:
+    if instance.center_x <= self.width/2:
         self.parent.transition.direction = 'right'
     else:
         self.parent.transition.direction = 'left'
@@ -1188,6 +1194,9 @@ class FileManagerItem(MDGridLayout):
 
         self.font_size = font_size
 
+    def on_touch_up(self, touch):
+        if self.collide_point(*touch.pos):
+            self.parent.parent.parent.select(self)
 
 #
 # Application

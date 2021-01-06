@@ -237,8 +237,10 @@ def save_file(data, path, filename):
     try:
         name = filename + '.xls' if filename else 'new.xls'
         wb.save(os.path.join(APP_DIR, '/'.join((path, name))))
+        return True
     except PermissionError:
-        print('!!!CLOSE FILE!!!\n'*10)
+        return False
+        print('!!!CLOSE FILE!!!')
 
 
 def load_file(path):
