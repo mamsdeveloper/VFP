@@ -1,6 +1,7 @@
 import os
 import sys
 
+from kivy.utils import platform
 from kivy.animation import Animation
 from kivy.clock import Clock
 from kivy.config import Config
@@ -57,6 +58,9 @@ class AppScreenManager(ScreenManager):
                         item.standards = standards
                         break
 
+    def on_kv_post(self, *args):
+        from android.permissions import request_permissions, Permission
+        request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])
 
 # Screen that provide default properties for screens
 class ParentScreen(MDScreen):
@@ -464,7 +468,8 @@ class SettingsScreen(ParentScreen):
             self.classes_exps = exps.copy()
             self.children[0].children[1].children[0].children[4].clear_widgets()
             for exp in self.classes_exps:
-                self.children[0].children[1].children[0].children[4].add_widget(exp)
+                self.children[0].children[1].children[0].children[4].add_widget(
+                    exp)
         else:
             self.exercises_exps = exps.copy()
             self.children[0].children[1].children[0].children[1].clear_widgets()
@@ -690,12 +695,12 @@ class SaveFileScreen(ParentScreen):
                 self.file_manager.path,
                 self.dialog.content_cls.children[0].text
             )
-            
+
             if is_save:
                 Snackbar('Файл сохранен').show()
             else:
                 Snackbar('Ошибка сохранения').show()
-                
+
             self.redirect(instance)
 
 
@@ -708,10 +713,11 @@ def swipe_direction(self, instance):
     else:
         self.parent.transition.direction = 'left'
 
-
 #
 # Work Areas
 #
+
+
 class ParentArea(GridLayout):
     pass
 
@@ -1116,7 +1122,8 @@ class FileManager(MDGridLayout):
         super().__init__()
         self.bg_color = bg_color
         self.sub_color = sub_color
-        if sys.platform == 'linux':
+        # Need to debug on PC
+        if platform == 'android':
             self.path = '/storage/emulated/0/'
         else:
             self.path = 'C:/Coding/VFP/programm/'
@@ -1201,6 +1208,8 @@ class FileManagerItem(MDGridLayout):
 #
 # Application
 #
+
+
 class App(MDApp):
     def build(self):
         """
@@ -1220,9 +1229,12 @@ class App(MDApp):
 def main():
     Clock.max_iteration = 1000
     Window.softinput_mode = 'below_target'
-    app = App()
-    app.run()
+    App().run()
 
 
 if __name__ == '__main__':
     main()
+
+# if platform == "android":
+# from android.permissions import request_permissions, Permission
+# request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])

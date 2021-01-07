@@ -1,4 +1,4 @@
-#: import platform sys.platform
+#: import platform kivy.utils.platform
 #
 # Screens
 #
@@ -829,7 +829,7 @@
                 NavItem:
                     name: "Settings" 
                     # !!!WARNING!!!                    
-                    icon: "settings" if platform == "linux" else "cog" # remove on prodaction
+                    icon: "settings" if platform == "android" else "cog" # remove on prodaction
                     on_release: root.redirect(self)        
 #
 # Create Screen
