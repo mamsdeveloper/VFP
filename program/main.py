@@ -8,7 +8,7 @@ from kivy.config import Config
 from kivy.core.window import Window
 from kivy.graphics import Color, RoundedRectangle
 from kivy.lang import Builder
-from kivy.metrics import *
+from kivy.metrics import sp
 from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.button import Button
 from kivy.uix.filechooser import FileChooser
@@ -32,10 +32,15 @@ from config_utils import *
 # Screen managers and Screens
 #
 class AppScreenManager(ScreenManager):
+    """
+    Main app widget.
+    Contain methods needful for screens connection.
+    """
+
     def update_settings_students(self, name, students):
         """
         Needed for update list of exps on settings screen
-        else app destoes on android
+        else app crashes on android.
         """
         for exp in self.children[0].classes_exps:
             for item in exp.items_list.children:
@@ -46,7 +51,7 @@ class AppScreenManager(ScreenManager):
     def update_settings_standards(self, title, standards):
         """
         Needed for update list of exps on settings screen
-        else app destoes on android
+        else app crashes on android.
         """
         exercise, group = title.split(':')
         group = group[1:]
@@ -59,19 +64,24 @@ class AppScreenManager(ScreenManager):
                         break
 
     def on_kv_post(self, *args):
+        """To ask storage permissions on firs start."""
+        return 0
         from android.permissions import request_permissions, Permission
-        request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])
+        request_permissions(
+            [Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])
+
 
 # Screen that provide default properties for screens
 class ParentScreen(MDScreen):
+    """Screen with basic methods."""
+
     def redirect(self, instance):
-        """
-        Create new screen and set it as current
-        """
+        """Create new screen and set it as current."""
         print('>>> Redirect to', instance.name)
         swipe_direction(self, instance)  # change swipe mod (left or right)
 
         if instance.name == 'Main':
+            # if some needful data in current screen ask to redirect else no
             if self.name in ('OpenFile', 'SaveFile'):
                 self.parent.switch_to(MainScreen(name='Main'))
             else:
@@ -108,6 +118,10 @@ class ParentScreen(MDScreen):
         print('@DONE')
 
     def open_dialog(self):
+        """
+        Open dialog when redirect from screens with some data to main screen 
+        to ask confirmation for redirect.
+        """
         ok_button = MDIconButton(
             icon='arrow-left-circle-outline',
             on_press=self.dialog_callback
@@ -127,31 +141,31 @@ class ParentScreen(MDScreen):
         self.dialog.open()
 
     def dialog_callback(self, instance):
+        """Redirect to main screen if user confirm it."""
         if instance.icon != 'close':
             self.parent.switch_to(MainScreen(name='Main'))
         self.dialog.dismiss()
 
 
 class MainScreen(ParentScreen):
+    """Screen with redirect buttons to create, open file and settings screens."""
     pass
 
 
 class FileChangeScreen():
+    """Base class for Create and Update screens."""
+
     def update_values(self):
-        if self.name == 'Create':
-            self.period = self.settings_area.children[6].text
-            teacher_list = self.settings_area.children[4]
-        else:
-            self.period = self.settings_area.children[2].text
-            teacher_list = self.settings_area.children[0]
+        """Save values from text inputs."""
+        i = -4 if self.name == 'Update' else 0  # different items pos on different screens
+        self.period = self.settings_area.children[i+6].text
+        teacher_list = self.settings_area.children[i+4]
         self.teacher['name'] = teacher_list.children[2].text
         self.teacher['rank'] = teacher_list.children[1].text
         self.teacher['post'] = teacher_list.children[0].text
 
     def save_file(self, instance):
-        """
-        Save screen values to statement
-        """
+        """Forming and validate data, create statement xls file."""
         self.update_values()
         data = {}
         data.update({'school_name': self.school_name})
@@ -159,12 +173,7 @@ class FileChangeScreen():
         data.update({'teacher': self.teacher})
         data.update({'class_name': self.class_name})
         data.update({'group': self.group})
-        data.update({
-            'exercises': dict(zip(
-                self.exercises.keys(),
-                (value for value in self.exercises.values())
-            ))
-        })
+        data.update({'exercises': self.exercises})
 
         results = {}
         for student in reversed(self.write_area.children[0].children):
@@ -193,15 +202,20 @@ class FileChangeScreen():
 
 
 class CreateScreen(ParentScreen, FileChangeScreen):
+    """ Screen for create new excel file."""
+
     def __init__(self, **kwargs):
         """
         Init values that will be used for save statement.
-        Create areas, set current area
+        Create areas, set current area.
         """
         print('>>> Init Create Screen')
         super().__init__(**kwargs)
         # data
         self.dialog = None
+        self.settings = {
+            'school_name'
+        }
         self.school_name = 'None'
         self.teacher = {
             'name': 'None',
@@ -227,7 +241,7 @@ class CreateScreen(ParentScreen, FileChangeScreen):
     def change_area(self, instance):
         """
         Change current work area.
-        Disable scroll on file settings area
+        Disable scroll on file settings area.
         """
         if self.area != instance.name:
             if instance.name == 'SettingsArea':
@@ -241,49 +255,40 @@ class CreateScreen(ParentScreen, FileChangeScreen):
                 self.children[0].children[-1].add_widget(self.write_area)
                 self.children[0].children[-1].scroll_y = 1
 
-    def update_drop_list(self, drop_list):
-        """
-        Set new values to class drop list
-        """
-        for group in drop_list:
-            for cls in drop_list[group]:
+    def create_drop_list(self, groups):
+        """Set new values to class drop list."""
+        for group in groups:
+            for cls in groups[group]:
                 self.settings_area.children[0].area.children[0].children[0].add_widget(
                     DropListItem())
                 self.settings_area.children[0].area.children[0].children[0].children[0].group = group
                 self.settings_area.children[0].area.children[0].children[0].children[0].name = cls[0]
                 self.settings_area.children[0].area.children[0].children[0].children[0].students = cls[1]
 
-    def update_checkboxes(self, exercises):
+    def create_checkboxes(self, exercises):
+        """Create checkboxes by config data."""
         for exercise in exercises:
             self.settings_area.children[2].children[0].add_widget(
                 CB(exercise, exercises[exercise]))
 
-    def update_exercises(self, instance):
+    def update_checkboxes(self, instance):
+        """Update activated/disactivate checkboxes lists when press on CB press."""
         if instance.children[1].active:
             self.exercises.update({instance.text: instance.standards})
-
-            if len(instance.parent.children) == 1:
-                instance.parent.parent.spacing = 0
-            else:
-                instance.parent.parent.spacing = sp(10)
-
-            instance.parent.remove_widget(instance)
-            self.settings_area.children[2].children[1].add_widget(instance)
         else:
             self.exercises.pop(instance.text)
 
-            if len(instance.parent.children) == 1:
-                instance.parent.parent.spacing = 0
-            else:
-                instance.parent.parent.spacing = sp(10)
-
-            instance.parent.remove_widget(instance)
-            self.settings_area.children[2].children[0].add_widget(instance)
+        if len(instance.parent.children) == 1:
+            instance.parent.parent.spacing = 0
+        else:
+            instance.parent.parent.spacing = sp(10)
+        instance.parent.remove_widget(instance)
+        # if is active add to 1-list else to 0-list
+        self.settings_area.children[2].children[(
+            instance.children[1].active)*1].add_widget(instance)
 
     def apply_config(self):
-        """
-        Apply app's config to create screen fields
-        """
+        """Apply app's config to create screen fields."""
         print('>>> Apply config to Create Screen')
         # get config
         config = get_config()
@@ -295,30 +300,19 @@ class CreateScreen(ParentScreen, FileChangeScreen):
         self.teacher = config['teacher']
 
         teacher_list = self.settings_area.children[4]
-
         teacher_list.children[2].text = config['teacher']['name']
         teacher_list.children[1].text = config['teacher']['rank']
         teacher_list.children[0].text = config['teacher']['post']
 
         # exercises checkboxes
-        self.update_checkboxes(config['exercises'])
+        self.create_checkboxes(config['exercises'])
 
-        self.exercises
         # classes list
-        drop_list = {}
-        for group in config['groups']:
-            drop_list.update({group: []})
-            for cls in config['groups'][group]:
-                drop_list[group].append(cls)
-
-        self.update_drop_list(drop_list)
-
-        for val in locals().values():
-            del val
-
+        self.create_drop_list(config['groups'])
         print('@DONE')
 
     def open_write_area_dialog(self):
+        """Show dialog when redirect from write area to tell that data will be lost."""
         ok_button = MDIconButton(
             icon='arrow-left-circle-outline',
             on_press=self.write_area_dialog_callback
@@ -338,6 +332,7 @@ class CreateScreen(ParentScreen, FileChangeScreen):
         self.dialog.open()
 
     def write_area_dialog_callback(self, instance):
+        """Change area if user comfirm it."""
         if instance.icon != 'close':
             self.children[0].children[-1].clear_widgets()
             self.area = 'SettingsArea'
@@ -346,10 +341,12 @@ class CreateScreen(ParentScreen, FileChangeScreen):
 
 
 class UpdateScreen(ParentScreen, FileChangeScreen):
+    """ Screen for change values in opened file."""
+
     def __init__(self, path='', **kwargs):
         """
         Init values that will be used for save statement.
-        Create areas, set current area
+        Create areas, set current area.
         """
         print('>>> Init Create Screen')
         super().__init__(**kwargs)
@@ -381,7 +378,7 @@ class UpdateScreen(ParentScreen, FileChangeScreen):
     def change_area(self, instance):
         """
         Change current work area.
-        Disable scroll on file settings area
+        Disable scroll on file settings area.
         """
         if self.area != instance.name:
             if instance.name == 'SettingsArea':
@@ -396,6 +393,7 @@ class UpdateScreen(ParentScreen, FileChangeScreen):
                 self.children[0].children[-1].scroll_y = 1
 
     def load_data(self):
+        """Load data from excel file and apply it to fields and variables."""
         data = excel_utils.load_file(self.path)
         config = get_config()
 
@@ -443,15 +441,19 @@ class UpdateScreen(ParentScreen, FileChangeScreen):
                 field.children[0].text = exercise[1]
 
 
-class ViewScreen(ParentScreen):
-    pass
-
-
 class SettingsScreen(ParentScreen):
+    """
+    Screen with app settings such as:
+    -School name
+    -Teacher rank, name and post
+    -Groups, classes and students
+    -Exercises and standards
+    """
+
     def __init__(self, **kwargs):
         """
-        Create exps' list (needed to predict destoings on android)
-        Apply app's config to settings screen values
+        Create exps' list (needed to predict crashes on android).
+        Apply app's config to settings screen values.
         """
         print('>>> Init Settings Screen')
         super().__init__(**kwargs)
@@ -460,10 +462,32 @@ class SettingsScreen(ParentScreen):
         self.apply_config()
         print('@DONE')
 
+    def create_exps(self, exps_type, iter_dict):
+        """Create expansion panels."""
+        exps = []
+
+        for item in iter_dict:
+            # create exp panel
+            exp = ExpPanel()
+
+            # set group if type - classes or exercise if exercises
+            exp.children[1].children[-1].children[1].text = item
+
+            # create items
+            for item in iter_dict[item]:
+                exp_item = ExpPanelItem()  # create
+                exp_item.children[1].children[1].text = item[0]  # set text
+                if exps_type == 'classes_exps':
+                    exp_item.students = item[1]  # set students
+                else:
+                    exp_item.standards = item[1]  # set standards
+                exp.items_list.add_widget(exp_item)  # add item to items list
+
+            exps.append(exp)
+        self.update_exps(exps_type, exps)
+
     def update_exps(self, name, exps):
-        """
-        Update exppanels values by class exps list
-        """
+        """Update exppanels values by class exps list"""
         if name == 'classes_exps':
             self.classes_exps = exps.copy()
             self.children[0].children[1].children[0].children[4].clear_widgets()
@@ -478,9 +502,7 @@ class SettingsScreen(ParentScreen):
                     exp)
 
     def apply_config(self):
-        """
-        Apply app's config to settings screen
-        """
+        """Apply app's config to settings screen."""
         print('>>> Apply config to Settings Screen')
         # get config
         config = get_config()
@@ -499,49 +521,9 @@ class SettingsScreen(ParentScreen):
         teacher_list.children[0].text = config['teacher']['post']
 
         # classes
-        exps = []
-
-        for group in config['groups']:
-            # create exp panel
-            exp = ExpPanel()
-
-            # set group name
-            exp.children[1].children[-1].children[1].text = group
-
-            # create items
-            for item in config['groups'][group]:
-                exp_item = ExpPanelItem()  # create
-                exp_item.children[1].children[1].text = item[0]  # set text
-                exp_item.students = item[1]  # set students
-                exp.items_list.add_widget(exp_item)  # add item to items list
-
-            exps.append(exp)
-
-        self.update_exps('classes_exps', exps)
-
+        self.create_exps('classes_exps', config['groups'])
         # exercises
-        exps = []
-
-        for exercise in config['exercises']:
-            # create exp panel
-            exp = ExpPanel()
-
-            # set group name
-            exp.children[1].children[-1].children[1].text = exercise
-
-            # create items
-            for item in config['exercises'][exercise]:
-                exp_item = ExpPanelItem()  # create
-                exp_item.children[1].children[1].text = item[0]  # set text
-                exp_item.standards = item[1]  # set standards
-                exp.items_list.add_widget(exp_item)  # add item to items list
-
-            exps.append(exp)
-
-        self.update_exps('exercises_exps', exps)
-
-        for val in locals().values():
-            del val
+        self.create_exps('exercises_exps', config['exercises'])
 
         print('@DONE')
 
@@ -554,78 +536,78 @@ class SettingsScreen(ParentScreen):
         Snackbar('Настройки сохранены').show()
 
 
-class ClassScreen(ParentScreen):
+class SubScreen():
+    """Screens that deletes after redirect"""
+
+    def redirect(self, instance):
+        """Redefining parent class redirect method to delete screen after redirect."""
+        super().redirect(instance)
+        self.parent.remove_widget(self)
+
+
+class ClassScreen(ParentScreen, SubScreen):
+    """Screen for add and del students from some class in settings screen."""
+
     def __init__(self, students=[], title='', **kwargs):
-        """
-        Set parent item, students' list and add them to students' box
-        """
+        """Set parent item, students' list and add them to students' box."""
         super().__init__(**kwargs)
         self.name = kwargs['name']
         self.title = title
         self.students = students
         self.student_box = self.children[0].children[1].children[0].children[1]
-
-        # add only exist students
         for student in self.students:
             self.student_box.add_widget(StudentItem(student))
 
     def update_students(self):
-        """
-        Add students from screen items to students' list
-        """
+        """Add students from screen items to students' list."""
         self.students = []
         for item in self.student_box.children:
-            # validate
-            if item.children[1].children[0].text:
+            if item.children[1].children[0].text:  # if not empty
                 self.students.append(item.children[1].children[0].text)
-
         self.students.sort()
 
-    def redirect(self, instance):
-        """
-        Redefining parent class redirect method to delete screen after redirect
-        """
-        super().redirect(instance)
-        self.parent.remove_widget(self)
 
+class ExerciseScreen(ParentScreen, SubScreen):
+    """Screen for set exercise standards."""
 
-class ExerciseScreen(ParentScreen):
     def __init__(self, standards=[], title='', **kwargs):
-        """
-        Set parent item
-        """
+        """Set parent item."""
         super().__init__(**kwargs)
         self.name = kwargs['name']
         self.title = title
         self.standards = standards
-
-        if len(standards) == 3:
-            self.children[0].children[1].children[0].children[4].text = self.standards[0]
-            self.children[0].children[1].children[0].children[2].text = self.standards[1]
-            self.children[0].children[1].children[0].children[0].text = self.standards[2]
+        # set data to  fields
+        for i, standard in enumerate(reversed(self.standards)):
+            self.children[0].children[1].children[0].children[i *
+                                                              2].text = standard
 
         # Turn off scrolling
         self.children[0].children[1].do_scroll_y = False
 
     def update_standards(self):
-        """
-        Add marks standards from screen items to standards' list
-        """
+        """Add marks standards from screen items to standards' list."""
         items = self.children[0].children[1].children[0].children
         self.standards = [items[4].text,    # 5
                           items[2].text,    # 4
                           items[0].text]    # 3
 
-    def redirect(self, instance):
+
+class FileManagerScreen():
+    """Basic screen for screens that use screen manager."""
+
+    def on_parent(self, *args):
         """
-        Redefining parent class redirect method to delete screen after redirect
+        When screen is already load need to update file manager width,
+        because default it incorrect
         """
-        super().redirect(instance)
-        self.parent.remove_widget(self)
+        self.children[0].children[-1].children[-1].update()
 
 
-class OpenFileScreen(ParentScreen):
+class OpenFileScreen(ParentScreen, FileManagerScreen):
+    """Screen with file chooser."""
+
     def __init__(self, **kwargs):
+        """Create file manager that show folders and excel files."""
         super().__init__(**kwargs)
         self.file_manager = FileManager(
             bg_color=(1, 1, 1, .6),
@@ -634,39 +616,39 @@ class OpenFileScreen(ParentScreen):
         )
         self.children[0].children[-1].add_widget(self.file_manager)
 
-    def on_parent(self, *args):
-        self.children[0].children[-1].children[-1].update()
-
     def redirect(self, instance):
+        """
+        Redefining parent class redirect method to 
+        validate file selection
+        """
         if self.file_manager.selected or instance.name == 'Main':
             super().redirect(instance)
         else:
             Snackbar('Выберите файл').show()
 
 
-class SaveFileScreen(ParentScreen):
+class SaveFileScreen(ParentScreen, FileManagerScreen, SubScreen):
+    """Screen with file chooser and save dialog."""
+
     def __init__(self, data, **kwargs):
+        """Create file manager that show only folders"""
         super().__init__(**kwargs)
         self.data = data
         self.dialog = None
         self.file_manager = FileManager(
             bg_color=(1, 1, 1, .6),
             sub_color=(.4, .4, .4, .3),
+            # All files will hide, because this extension doesn't exist
             file_filter=['Hide files']
         )
         self.children[0].children[-1].add_widget(self.file_manager)
 
-    def on_parent(self, *args):
-        self.children[0].children[-1].children[-1].update()
-
-    def redirect(self, instance):
-        super().redirect(instance)
-        self.parent.remove_widget(self)
-
     def save(self):
+        """Open save dialog."""
         self.open_save_file_dialog()
 
     def open_save_file_dialog(self):
+        """Create dialog with file name input."""
         ok_button = MDIconButton(
             icon='check',
             on_press=self.save_file_dialog_callback
@@ -688,6 +670,7 @@ class SaveFileScreen(ParentScreen):
         self.dialog.open()
 
     def save_file_dialog_callback(self, instance):
+        """Save file if user confirm it, check save errors, redirect after save"""
         self.dialog.dismiss()
         if instance.icon == 'check':
             is_save = excel_utils.save_file(
@@ -695,7 +678,6 @@ class SaveFileScreen(ParentScreen):
                 self.file_manager.path,
                 self.dialog.content_cls.children[0].text
             )
-
             if is_save:
                 Snackbar('Файл сохранен').show()
             else:
@@ -822,8 +804,8 @@ class ExpPanel(MDGridLayout):
     def __init__(self, placeholder=''):
         """
         Init panel's main widgets.
-        Creare items list.
-        Change stete to close
+        Create items list.
+        Change state to close
         """
         super().__init__()
         # init box and right button
@@ -878,15 +860,11 @@ class ExpPanelBox(MDGridLayout):
 
 class ExpPanelItemsList(MDGridLayout):
     def add_item(self):
-        """
-        Add new item to exp items list
-        """
+        """Add new item to exp items list"""
         self.add_widget(ExpPanelItem())
 
     def del_item(self, instance):
-        """
-        del item from list
-        """
+        """Del item from list"""
         self.remove_widget(instance)
 
 
@@ -896,9 +874,7 @@ class ExpRightButton(AnchorLayout):
 
 class ExpPanelFirstItem(GridLayout):
     def __init__(self, placeholder):
-        """
-        docstring
-        """
+        """Set placeholder variable for first input"""
         super().__init__()
         self.placeholder = placeholder
 
@@ -984,7 +960,7 @@ class DropInput(MDGridLayout):
 
     def choose_item(self, instance):
         """
-        Choose item frop drop list and set to label, set students list to screen
+        Choose item from drop list and set to label, set students list to screen
         """
         self.children[-1].children[-1].text = instance.name
         self.parent.parent.parent.parent.group = instance.group
@@ -1126,7 +1102,7 @@ class FileManager(MDGridLayout):
         if platform == 'android':
             self.path = '/storage/emulated/0/'
         else:
-            self.path = 'C:/Coding/VFP/programm/'
+            self.path = 'C:/Coding/VFP/program/'
         self.file_filter = file_filter
         self.selected = ''
 
@@ -1234,7 +1210,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# if platform == "android":
-# from android.permissions import request_permissions, Permission
-# request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])

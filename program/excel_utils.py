@@ -1,3 +1,5 @@
+__all__ = ['save_file', 'load_file']
+
 import os
 import sys
 from collections import Counter
@@ -261,9 +263,9 @@ def load_file(path):
         teacher_rank, teacher_name = '', ''
         
     teacher = {
-        'name': teacher_name,
-        'post': teacher_post,
-        'rank': teacher_rank
+        'name': teacher_name.strip(),
+        'post': teacher_post.strip(),
+        'rank': teacher_rank.strip()
     }
     # exercises
     exercises = []
