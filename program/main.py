@@ -73,7 +73,7 @@ class AppScreenManager(ScreenManager):
 
 # Screen that provide default properties for screens
 class ParentScreen(MDScreen):
-    """Screen with basic methods."""
+    """Basic class with common methods for all screens."""
 
     def redirect(self, instance):
         """Create new screen and set it as current."""
@@ -119,7 +119,7 @@ class ParentScreen(MDScreen):
 
     def open_dialog(self):
         """
-        Open dialog when redirect from screens with some data to main screen 
+        Open dialog when redirect from screens with some data to main screen
         to ask confirmation for redirect.
         """
         ok_button = MDIconButton(
@@ -158,22 +158,16 @@ class FileChangeScreen():
     def update_values(self):
         """Save values from text inputs."""
         i = -4 if self.name == 'Update' else 0  # different items pos on different screens
-        self.period = self.settings_area.children[i+6].text
+        self.settings['period'] = self.settings_area.children[i+6].text
         teacher_list = self.settings_area.children[i+4]
-        self.teacher['name'] = teacher_list.children[2].text
-        self.teacher['rank'] = teacher_list.children[1].text
-        self.teacher['post'] = teacher_list.children[0].text
+        self.settings['teacher']['name'] = teacher_list.children[2].text
+        self.settings['teacher']['rank'] = teacher_list.children[1].text
+        self.settings['teacher']['post'] = teacher_list.children[0].text
 
     def save_file(self, instance):
         """Forming and validate data, create statement xls file."""
         self.update_values()
-        data = {}
-        data.update({'school_name': self.school_name})
-        data.update({'period': self.period})
-        data.update({'teacher': self.teacher})
-        data.update({'class_name': self.class_name})
-        data.update({'group': self.group})
-        data.update({'exercises': self.exercises})
+        data = self.settings
 
         results = {}
         for student in reversed(self.write_area.children[0].children):
@@ -193,7 +187,7 @@ class FileChangeScreen():
 
         if len(data) < 7:
             Snackbar('Заполните все поля').show()
-        elif len(self.exercises) > 3:
+        elif len(self.settings['exercises']) > 3:
             Snackbar('Не больше 3 упражнений').show()
         else:
             swipe_direction(self, instance)
@@ -211,22 +205,29 @@ class CreateScreen(ParentScreen, FileChangeScreen):
         """
         print('>>> Init Create Screen')
         super().__init__(**kwargs)
-        # data
         self.dialog = None
+        # settings
         self.settings = {
-            'school_name'
+            'school_name': '',
+            'period': '',
+            'teacher': {
+                'name': '',
+                'rank': '',
+                'post': ''
+            },
+            'group': '',
+            'class_name': '',
+            'students': [],
+            'exercises': {},
         }
-        self.school_name = 'None'
-        self.teacher = {
-            'name': 'None',
-            'rank': 'None',
-            'post': 'None'
+        # need to check settings change that can influence on write area
+        self.last_settings = {
+            'group': '',
+            'class_name': '',
+            'students': [],
+            'exercises': {},
         }
-        self.group = ''
-        self.class_name = ''
-        self.students = []
-        self.exercises = {}
-        self.period = ''
+
         self.settings_area = FileSettingsArea()
         self.write_area = FileWriteArea()
         self.area = 'SettingsArea'
@@ -247,13 +248,32 @@ class CreateScreen(ParentScreen, FileChangeScreen):
             if instance.name == 'SettingsArea':
                 self.open_write_area_dialog()
             else:
-                self.children[0].children[-1].clear_widgets()
                 self.area = 'WriteArea'
-                self.write_area.update_area(
-                    self.group, self.class_name, self.students, self.exercises)
+                self.children[0].children[-1].clear_widgets()
+                # if settings that can influence on write area
+                # is changed update write area else no
+                inf_setting = {}  # settings that can change write area
+                for key in ('group', 'class_name', 'students', 'exercises'):
+                    inf_setting.update({key: self.settings[key]})
+
+                if self.last_settings != inf_setting:
+                    self.write_area.update_area(
+                        self.settings['group'],
+                        self.settings['class_name'],
+                        self.settings['students'],
+                        self.settings['exercises']
+                    )
                 self.children[0].children[-1].do_scroll_y = True
                 self.children[0].children[-1].add_widget(self.write_area)
                 self.children[0].children[-1].scroll_y = 1
+
+                # update last settings by new values
+                for key, value in inf_setting.items():
+                    # copy values that create link on assigment
+                    if type(value) in (list, dict):
+                        self.last_settings.update({key: value.copy()})
+                    else:
+                        self.last_settings.update({key: value})
 
     def create_drop_list(self, groups):
         """Set new values to class drop list."""
@@ -274,9 +294,10 @@ class CreateScreen(ParentScreen, FileChangeScreen):
     def update_checkboxes(self, instance):
         """Update activated/disactivate checkboxes lists when press on CB press."""
         if instance.children[1].active:
-            self.exercises.update({instance.text: instance.standards})
+            self.settings['exercises'].update(
+                {instance.text: instance.standards})
         else:
-            self.exercises.pop(instance.text)
+            self.settings['exercises'].pop(instance.text)
 
         if len(instance.parent.children) == 1:
             instance.parent.parent.spacing = 0
@@ -294,10 +315,10 @@ class CreateScreen(ParentScreen, FileChangeScreen):
         config = get_config()
 
         # school name
-        self.school_name = config['school_name']
+        self.settings['school_name'] = config['school_name']
 
         # teacher
-        self.teacher = config['teacher']
+        self.settings['teacher'] = config['teacher']
 
         teacher_list = self.settings_area.children[4]
         teacher_list.children[2].text = config['teacher']['name']
@@ -312,7 +333,7 @@ class CreateScreen(ParentScreen, FileChangeScreen):
         print('@DONE')
 
     def open_write_area_dialog(self):
-        """Show dialog when redirect from write area to tell that data will be lost."""
+        """Show dialog when redirect from write area to tell that data can be lost."""
         ok_button = MDIconButton(
             icon='arrow-left-circle-outline',
             on_press=self.write_area_dialog_callback
@@ -324,7 +345,7 @@ class CreateScreen(ParentScreen, FileChangeScreen):
 
         self.dialog = MDDialog(
             title='Перейти к настройкам?',
-            text='Введенные данные будут утеряны.',
+            text='Введенные данные могут быть утеряны.',
             size_hint=(.8, None),
             buttons=[ok_button, cancel_button],
             auto_dismiss=False
@@ -350,20 +371,24 @@ class UpdateScreen(ParentScreen, FileChangeScreen):
         """
         print('>>> Init Create Screen')
         super().__init__(**kwargs)
-        # data
         self.path = path
         self.dialog = None
-        self.school_name = 'None'
-        self.teacher = {
-            'name': 'None',
-            'rank': 'None',
-            'post': 'None'
+        # settings
+
+        self.settings = {
+            'school_name': '',
+            'teacher': {
+                'name': '',
+                'rank': '',
+                'post': ''
+            },
+            'group': '',
+            'class_name': '',
+            'students': [],
+            'exercises': {},
+            'period': '',
         }
-        self.group = ''
-        self.class_name = ''
-        self.students = []
-        self.exercises = {}
-        self.period = ''
+
         self.settings_area = FileSettingsShortenArea()
         self.write_area = FileWriteArea()
         self.area = 'WriteArea'
@@ -397,22 +422,22 @@ class UpdateScreen(ParentScreen, FileChangeScreen):
         data = excel_utils.load_file(self.path)
         config = get_config()
 
-        self.school_name = data['school_name']
-        self.class_name = data['class_name'].replace(' класс', '')
+        self.settings['school_name'] = data['school_name']
+        self.settings['class_name'] = data['class_name'].replace(' класс', '')
 
         for group in config['groups']:
             for class_name in config['groups'][group]:
-                if class_name[0] == self.class_name:
-                    self.group = group
-                    self.students = class_name[1]
+                if class_name[0] == self.settings['class_name']:
+                    self.settings['group'] = group
+                    self.settings['students'] = class_name[1]
                     break
             else:
                 break
 
-        self.period = data['period']
+        self.settings['period'] = data['period']
         self.settings_area.children[2].text = data['period']
 
-        self.teacher = data['teacher']
+        self.settings['teacher'] = data['teacher']
         teacher_list = self.settings_area.children[0]
         teacher_list.children[2].text = data['teacher']['name']
         teacher_list.children[1].text = data['teacher']['rank']
@@ -420,14 +445,14 @@ class UpdateScreen(ParentScreen, FileChangeScreen):
 
         for exercise in data['exercises']:
             if exercise in config['exercises'].keys():
-                self.exercises.update(
+                self.settings['exercises'].update(
                     {exercise: config['exercises'][exercise]})
 
         self.write_area.update_area(
-            self.group,
-            self.class_name,
-            self.students,
-            self.exercises
+            self.settings['group'],
+            self.settings['class_name'],
+            self.settings['students'],
+            self.settings['exercises']
         )
 
         for student, result in zip(
@@ -687,9 +712,7 @@ class SaveFileScreen(ParentScreen, FileManagerScreen, SubScreen):
 
 
 def swipe_direction(self, instance):
-    """
-    Change swipe direction of SM on right or left in relation to touch pos
-    """
+    """Change swipe direction of SM on right or left in relation to touch pos"""
     if instance.center_x <= self.width/2:
         self.parent.transition.direction = 'right'
     else:
@@ -701,30 +724,38 @@ def swipe_direction(self, instance):
 
 
 class ParentArea(GridLayout):
+    """Basic class for all areas with common KV lang properties"""
     pass
 
 
 class MainArea(ParentArea):
+    """Work area of Main Screen. Contains KV lang properties"""
     pass
 
 
 class SettingsArea(ParentArea):
+    """Work area of Settings Screen. Contains KV lang properties"""
     pass
 
 
 class ClassArea(ParentArea):
+    """Work area of Class Screen. Contains KV lang properties"""
     pass
 
 
 class ExerciseArea(ParentArea):
+    """Work area of Exercise Screen. Contains KV lang properties"""
     pass
 
 
 class FileSettingsArea(ParentArea):
+    """
+    Work area of Create Screen with file settings. 
+    Contains KV lang properties and touch_up method.
+    """
+
     def on_touch_up(self, *args):
-        """
-        Close drop input on screen touch
-        """
+        """Close drop input on screen touch."""
         super().on_touch_up(*args)
         if (
             self.children[0].st and
@@ -736,28 +767,41 @@ class FileSettingsArea(ParentArea):
 
 
 class FileSettingsShortenArea(ParentArea):
+    """
+    Work area of Create Screen with some file settings. 
+    Contains KV lang properties.
+    """
     pass
 
 
 class FileWriteArea(ParentArea):
+    """
+    Work area of Create Screen with classes marks inputs. 
+    Contains KV lang properties.
+    """
+
     def update_area(self, group, class_name, students, exercises):
-        """
-        Update write area with neew students and exercises
-        """
+        """Update write area with new students and exercises."""
         self.children[1].text = f'Результаты {class_name} класса:'
 
         for student in students:
             self.children[0].add_widget(WriteAreaItem())
+            # set student name to write area
             self.children[0].children[0].children[1].text = student
             for exercise in exercises:
+                # if exercise standarts is empty
                 if not exercises[exercise]:
                     continue
-
+                
+                # if exercise standarts for current group exist
                 if any([i[0] == group for i in exercises[exercise]]):
                     self.children[0].children[0].children[0].add_widget(
                         ExerciseResultItem())
                     self.children[0].children[0].children[0].children[0].children[1].text = exercise
 
+        # this need to clear last widgets after new is added
+        # because if it does before program crash with 
+        # "weakly-object doesn't exist" error
         l = len(self.children[0].children) - len(students)
         if l:
             self.children[0].clear_widgets(self.children[0].children[-l:])
@@ -767,10 +811,12 @@ class FileWriteArea(ParentArea):
 # Expansion Panel
 #
 class ExpsList(MDGridLayout):
+    """Widget that contain Expansion Panels."""
+
     def add_exp(self, instance):
         """
         Add new exp panel to exps list.
-        Update screen's exps list
+        Update screen's exps list.
         Close opened exps.
         """
         self.add_widget(ExpPanel(
@@ -781,19 +827,18 @@ class ExpsList(MDGridLayout):
         self.update_exps()
 
     def del_exp(self, instance):
-        """
-        Del exp from list
-        Update screen's exps list
-        """
+        """Del exp from list. Update screen's exps list."""
         self.remove_widget(instance.parent.parent)
         self.update_exps()
 
     def close_all(self):
+        """Close opened exps."""
         for exp in self.children:
             if exp.st:
                 exp.change_state()
 
     def update_exps(self):
+        """Create list of exps and call screen update method."""
         exps = []
         for exp in reversed(self.children):
             exps.append(exp)
@@ -963,9 +1008,10 @@ class DropInput(MDGridLayout):
         Choose item from drop list and set to label, set students list to screen
         """
         self.children[-1].children[-1].text = instance.name
-        self.parent.parent.parent.parent.group = instance.group
-        self.parent.parent.parent.parent.class_name = instance.name
-        self.parent.parent.parent.parent.students = instance.students
+        screen = self.parent.parent.parent.parent
+        screen.settings['group'] = instance.group
+        screen.settings['class_name'] = instance.name
+        screen.settings['students'] = instance.students
         self.change_state()
 
 
