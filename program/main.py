@@ -792,7 +792,7 @@ class FileWriteArea(ParentArea):
                 # if exercise standarts is empty
                 if not exercises[exercise]:
                     continue
-                
+
                 # if exercise standarts for current group exist
                 if any([i[0] == group for i in exercises[exercise]]):
                     self.children[0].children[0].children[0].add_widget(
@@ -800,7 +800,7 @@ class FileWriteArea(ParentArea):
                     self.children[0].children[0].children[0].children[0].children[1].text = exercise
 
         # this need to clear last widgets after new is added
-        # because if it does before program crash with 
+        # because if it does before program crash with
         # "weakly-object doesn't exist" error
         l = len(self.children[0].children) - len(students)
         if l:
@@ -846,37 +846,34 @@ class ExpsList(MDGridLayout):
 
 
 class ExpPanel(MDGridLayout):
+    """
+    Panel with opened/closed area.
+    Consist always-viewed widget and widget that can hide.
+    """
+
     def __init__(self, placeholder=''):
-        """
-        Init panel's main widgets.
-        Create items list.
-        Change state to close
-        """
+        """Init panel's main widgets. Create items list. Change state to close."""
         super().__init__()
         # init box and right button
         self.add_widget(ExpPanelBox())
         self.add_widget(ExpRightButton())
-
         # init items list
         self.items_list = ExpPanelItemsList()
-
         # add first item, items list and add-button in box
         self.placeholder = placeholder
         self.children[1].add_widget(ExpPanelFirstItem(self.placeholder))
         self.children[1].add_widget(self.items_list)
         self.children[1].add_widget(ExpPanelAddButton())
-
+        # hide closed/opened area
         self.children[1].children[1].size_hint_y = 0
         self.children[1].children[1].opacity = 0
         self.children[1].children[0].height = 0
         self.children[1].children[0].opacity = 0
-        # self close/open state
+        # self is closed/opened state
         self.st = False
 
     def change_state(self):
-        """
-        Change state of panel (close or open)
-        """
+        """Change state of panel (close or open)"""
         # close
         if self.st:
             self.children[1].children[1].size_hint_y = 0
@@ -899,46 +896,52 @@ class ExpPanel(MDGridLayout):
         self.st = not self.st
 
 
-class ExpPanelBox(MDGridLayout):
-    pass
-
-
-class ExpPanelItemsList(MDGridLayout):
-    def add_item(self):
-        """Add new item to exp items list"""
-        self.add_widget(ExpPanelItem())
-
-    def del_item(self, instance):
-        """Del item from list"""
-        self.remove_widget(instance)
-
-
-class ExpRightButton(AnchorLayout):
-    pass
-
-
 class ExpPanelFirstItem(GridLayout):
+    """Always-viewed exp widget. Consist text input and close/open button."""
+
     def __init__(self, placeholder):
-        """Set placeholder variable for first input"""
+        """Set placeholder variable for text input"""
         super().__init__()
         self.placeholder = placeholder
 
 
-class ExpPanelAddButton(AnchorLayout):
+class ExpRightButton(AnchorLayout):
+    """Button for delete exp panel."""
     pass
 
 
+class ExpPanelBox(MDGridLayout):
+    """Closed/Opened exp widget."""
+    pass
+
+
+class ExpPanelItemsList(MDGridLayout):
+    """Widget that contains typical exp widgets."""
+
+    def add_item(self):
+        """Add new item to exp items list."""
+        self.add_widget(ExpPanelItem())
+
+    def del_item(self, instance):
+        """Del item from list."""
+        self.remove_widget(instance)
+
+
 class ExpPanelItem(GridLayout):
+    """
+    Exp panel typical widget. 
+    Consist text input, write button and item delete button.
+    """
+
     def update(self, instance):
+        """Create sub screen to change item values."""
         if instance.parent.parent.parent.parent.parent.parent.name == 'classes_exps':
             self.update_class(instance)
         else:
             self.update_exercises(instance)
 
     def update_class(self, instance):
-        """
-        Create class update screen, redirect to it.
-        """
+        """Create and open class update screen."""
         # create class screen
         self.class_scr = ClassScreen(
             self.students, instance.text, name=instance.text)
@@ -948,12 +951,8 @@ class ExpPanelItem(GridLayout):
         sm.add_widget(self.class_scr)
         sm.current = instance.text
 
-        del sm
-
     def update_exercises(self, instance):
-        """
-        Create exercises screen, redirect to it.
-        """
+        """Create and open exercises screen."""
         # create class screen
         title = self.parent.parent.children[-1].text + ': ' + instance.text
         self.exercise_scr = ExerciseScreen(
@@ -965,17 +964,20 @@ class ExpPanelItem(GridLayout):
         sm.add_widget(self.exercise_scr)
         sm.current = instance.text
 
-        del sm
+
+class ExpPanelAddButton(AnchorLayout):
+    """Button for add exp list item."""
+    pass
 
 
 #
 # Drop Input
 #
 class DropInput(MDGridLayout):
+    """Input with drop-down menu."""
+
     def __init__(self, **kwargs):
-        """
-        Init drop input area, set drop input state to close
-        """
+        """Init drop-down area, set drop input state to close"""
         super().__init__(**kwargs)
         self.area = DropInputDropArea()
         self.add_widget(DropInputFirstItem())
@@ -984,16 +986,16 @@ class DropInput(MDGridLayout):
         self.st = False
 
     def change_state(self):
-        """
-        Change drop input state (close or open)
-        """
+        """Change drop input state (close or open)."""
         self.parent.parent.scroll_to(self)
+        # close
         if self.st:
             self.area.opacity = 0
             self.area.children[0].height = 0
             self.children[-1].children[0].icon = 'menu-right'
             self.get_root_window(
             ).children[-1].current_screen.children[0].children[-1].do_scroll_y = True
+        # open
         else:
             self.area.opacity = 1
             self.area.children[0].height = sp(176)
@@ -1004,9 +1006,7 @@ class DropInput(MDGridLayout):
         self.st = not self.st
 
     def choose_item(self, instance):
-        """
-        Choose item from drop list and set to label, set students list to screen
-        """
+        """Choose item from drop list and set to label, set students list to screen"""
         self.children[-1].children[-1].text = instance.name
         screen = self.parent.parent.parent.parent
         screen.settings['group'] = instance.group
@@ -1015,24 +1015,26 @@ class DropInput(MDGridLayout):
         self.change_state()
 
 
+class DropInputFirstItem(GridLayout):
+    """Text field that view selected item."""
+    pass
+
+
 class DropInputDropArea(AnchorLayout):
+    """Drop-down widget."""
     pass
 
 
 class DropInputScroll(ScrollView):
-    pass
-
-
-class DropInputFirstItem(GridLayout):
+    """Scroll area of drop-down widget."""
     pass
 
 
 class DropListItem(Button):
+    """Item of drop-down menu."""
+
     def on_touch_down(self, *args):
-        """
-        Choose item
-        """
-        super().on_touch_down(*args)
+        """ Choose item."""
         # to exclude touching of other items
         if self.collide_point(*args[0].pos):
             self.parent.parent.parent.parent.choose_item(self)
@@ -1042,53 +1044,64 @@ class DropListItem(Button):
 # Area's items
 #
 class TunedTextInput(TextInput):
+    """Text input with KV lang properties. Used in all inputs."""
+
     def adopt_scroll(self):
+        """
+        Need for work areas with aren't full filled scroll area 
+        that scrolls incorrect.
+        """
         area_h = self.get_root_window(
         ).children[-1].current_screen.children[0].children[-1].children[0].height
         scroll_h = self.get_root_window(
         ).children[-1].current_screen.children[0].children[-1].height
-
+        # only if scroll area is full filled
         if self.focus and area_h > scroll_h:
             self.get_root_window(
             ).children[-1].current_screen.children[0].children[-1].scroll_to(self)
 
 
 class SimpleTextInput(FloatLayout):
+    """Simple text input used in many widgets."""
     pass
 
 
 class StudentsList(MDGridLayout):
+    """List of students widgets on Class Screen."""
+
     def add_student(self):
-        """
-        Add student to student list
-        """
+        """Add student to student list."""
         self.add_widget(StudentItem())
 
     def del_student(self, instance):
-        """
-        Del student from list
-        """
+        """Del student from list."""
         self.remove_widget(instance)
 
 
 class StudentItem(GridLayout):
-    def __init__(self, text='', **kwargs):
-        """
-        Set self text from arguments
-        """
-        super().__init__(**kwargs)
+    """Item of students list."""
+
+    def __init__(self, text=''):
+        """Set self text from arguments."""
+        super().__init__()
         self.text = text
 
 
 class CB(MDGridLayout):
+    """CheckBox with exercise name."""
+
     def __init__(self, text, standards):
+        """Set exercise name and standarts, ch state."""
         super().__init__()
         self.st = True
         self.text = text
         self.standards = standards
 
     def on_touch_up(self, touch):
+        """Check touch on label."""
+        # if click on label
         if self.collide_point(touch.x, touch.y) and not self.children[1].collide_point(touch.x, touch.y):
+            # that need to copminsate MDCheckBox methods
             if self.children[1].active:
                 if self.st:
                     self.st = False
@@ -1102,23 +1115,38 @@ class CB(MDGridLayout):
             super().on_touch_up(touch)
 
 
-class ExerciseResultItem(MDGridLayout):
+
+class WriteAreaItem(MDGridLayout):
+    """
+    Item of Write Area students list.
+    Consist student name and results inputs.
+    """
     pass
 
 
-class WriteAreaItem(MDGridLayout):
+class ExerciseResultItem(MDGridLayout):
+    """
+    Student result input on write area.
+    Consist exercise name and text input.
+    """
     pass
 
 
 class Snackbar(MDFloatLayout):
+    """Pop-up tip. Based on MDSnackbar methods with fixed bugs"""
+
     def __init__(self, text, **kwargs):
+        """Set open/close and showwen time."""
         super().__init__()
         self.text = text
+        # it works strange because taken from mdsnackbar that has some bugs
+        # the simple way is takes different values
+        # to set open and showwen time
         self.duration = 3.5
-        self._interval = 2
+        self._interval = 2 
 
     def show(self):
-        """Show the snackbar."""
+        """Show the snackbar. MDSnackBar fixed method"""
 
         def wait_interval(interval):
             self._interval += interval
@@ -1140,7 +1168,10 @@ class Snackbar(MDFloatLayout):
 
 
 class FileManager(MDGridLayout):
+    """File manager widget."""
+
     def __init__(self, path=None, bg_color=(1, 1, 1, 1), sub_color=(0, 0, 0, 1), file_filter=[]):
+        """Set color, path and file filter."""
         super().__init__()
         self.bg_color = bg_color
         self.sub_color = sub_color
@@ -1152,7 +1183,8 @@ class FileManager(MDGridLayout):
         self.file_filter = file_filter
         self.selected = ''
 
-    def update(self, *args):
+    def update(self, *args):        
+        """Update self width."""
         try:
             self.width = self.get_root_window().width
         except AttributeError:
@@ -1161,6 +1193,7 @@ class FileManager(MDGridLayout):
         self.update_widgets()
 
     def update_widgets(self):
+        """Updated viewed files and folders, current path."""
         self.children[0].children[0].clear_widgets()
         try:
             list_dir = os.listdir(self.path)
@@ -1181,11 +1214,13 @@ class FileManager(MDGridLayout):
                     FileManagerItem(self.width * .18, item[0], item[1]))
         except PermissionError:
             pass
-
+        
+        # if not empty permiss scroll
         if self.children[0].children[0].children:
             self.children[0].scroll_y = 1
 
     def turn_back(self):
+        """Return to last folder."""
         try:
             if len(self.path.split('/')) > 2 and self.path != '/storage/emulated/0/':
                 self.path = '/'.join(self.path.split('/')[:-2]) + '/'
@@ -1195,6 +1230,7 @@ class FileManager(MDGridLayout):
             pass
 
     def select(self, instance):
+        """Select file."""
         if instance.tp == 'file':
             self.selected = self.path + instance.name
             for item in self.children[0].children[0].children:
@@ -1209,7 +1245,10 @@ class FileManager(MDGridLayout):
 
 
 class FileManagerItem(MDGridLayout):
+    """File manager item folder/icon."""
+
     def __init__(self, font_size, name, tp):
+        """Set name, path and type of item."""
         super().__init__()
         self.name = name
         self.tp = tp
@@ -1224,15 +1263,17 @@ class FileManagerItem(MDGridLayout):
         self.font_size = font_size
 
     def on_touch_up(self, touch):
+        """Select on touch."""
         if self.collide_point(*touch.pos):
             self.parent.parent.parent.select(self)
+
 
 #
 # Application
 #
-
-
 class App(MDApp):
+    """Application class."""
+
     def build(self):
         """
         Set app's values: title, icon, theme.
@@ -1249,6 +1290,7 @@ class App(MDApp):
 
 # Running application
 def main():
+    """Set max iteration to predict warnings. Run app."""
     Clock.max_iteration = 1000
     Window.softinput_mode = 'below_target'
     App().run()
