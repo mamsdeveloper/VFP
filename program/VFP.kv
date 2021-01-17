@@ -159,7 +159,7 @@
     SimpleTextInput:
         hint_text: "Удоволетворительно"
 
-# area with file settings as school name, teacher and other
+#@@@@@@@
 <FileSettingsArea>:
     SimpleLabel:
         text: "Период сдачи:"
@@ -301,7 +301,6 @@
     height: sp(40)
     hint_text: ""
     text: ""
-
     canvas.before:
         Color: 
             rgba: 1, 1, 1, 1
@@ -425,7 +424,7 @@
 
 #@@@@@@@
 <Snackbar>:
-    text: ''
+    text: ""
     BoxLayout:
         id: box
         y: -sp(48)
@@ -433,7 +432,6 @@
         padding: [sp(8), sp(15)]
         size_hint_y: None
         height: app.root_window.children[-1].current_screen.children[0].children[0].height
-
         canvas:
             Color:
                 rgba: (1, 1, 1, .9)
@@ -448,18 +446,17 @@
             text: root.text
             font_size: sp(18)
             halign: "center"
-            pos_hint: {'center_y': .5}
+            pos_hint: {"center_y": .5}
 
 
 #@@@@@@@
 <FileManager>:
     bg_color: (1, 1, 1, 1)
     sub_color: (0, 0, 0, 1)
-    path: ''
+    path: ""
     cols: 1
     spacing: self.width // 20
     padding: [0, 0, 0, self.width // 20]
-
     canvas.before:
         Color:
             rgba: root.bg_color
@@ -474,7 +471,6 @@
         adaptive_height: True
         padding: [0, 0, root.width // 25, 0]
         spacing: root.width // 50
-
         canvas.before:
             Color:
                 rgba: root.sub_color
@@ -488,7 +484,7 @@
             size: root.width*.2, root.width*.2
             MDIconButton:
                 pos_hint: {"center_x": .5, "center_y": .5}
-                icon: 'arrow-left'
+                icon: "arrow-left"
                 user_font_size: root.width*.1
                 on_release:  root.turn_back()
 
@@ -510,13 +506,13 @@
 <FileManagerItem>:
     cols: 1
     adaptive_height: True
-    name: ''
-    icon: 'error'
+    name: ""
+    icon: "error"
     font_size: 10
     spacing: self.font_size // 10
 
     AnchorLayout:
-        anchor_x: 'center'
+        anchor_x: "center"
         size_hint_y: None
         height: root.font_size
         st: False
@@ -533,14 +529,14 @@
             icon: root.icon
 
     AnchorLayout:
-        anchor_x: 'center'
+        anchor_x: "center"
         size_hint: .5, None
         height: root.font_size // 4
         
         MDLabel:
             size_hint_x: .8
             shorten: True
-            halign: 'center'
+            halign: "center"
             font_size: root.font_size // 4
             text: root.name
 #
@@ -707,7 +703,6 @@
     height: sp(190)
     padding: [0, sp(7)]
     opacity: 0
-    
     canvas.before:
         Color: 
             rgba: 0, 0, 0, .15
@@ -1014,7 +1009,7 @@
         Nav:
             FloatLayout:
                 NavItem:
-                    name: "Update" if app.root_window.children[-1].current_screen.name == 'Update' else 'Create'
+                    name: "Update" if app.root_window.children[-1].current_screen.name == "Update" else "Create"
                     icon: "arrow-left-circle-outline" 
                     on_release: root.redirect(self)
             
