@@ -68,7 +68,8 @@ class AppScreenManager(ScreenManager):
 
     def on_kv_post(self, *args):
         """To ask storage permissions on firs start."""
-        return 0
+        if platform == 'win':
+            return
         from android.permissions import request_permissions, Permission
         request_permissions([
             Permission.READ_EXTERNAL_STORAGE,
@@ -213,7 +214,8 @@ class FileChangeScreen():
             if not data[key]:
                 data.pop(key)
 
-        if len(data) < 7:
+        print(data.keys())
+        if len(data) < 8:
             Snackbar('Заполните все поля').show()
         elif len(self.settings['exercises']) > 3:
             Snackbar('Не больше 3 упражнений').show()
@@ -1207,7 +1209,7 @@ class FileManager(MDGridLayout):
         if platform == 'android':
             self.path = '/storage/emulated/0/'
         else:
-            self.path = 'C:/Coding/VFP/program/'
+            self.path = 'C:/Coding/VFP/VFP/program/'
         self.file_filter = file_filter
         self.selected = ''
 

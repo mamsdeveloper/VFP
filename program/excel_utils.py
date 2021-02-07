@@ -1,5 +1,3 @@
-__all__ = ['save_file', 'load_file']
-
 import os
 import sys
 from collections import Counter
@@ -9,6 +7,7 @@ import xlrd
 import xlwt
 from xlutils.copy import copy
 
+__all__ = ['save_file', 'load_file']
 
 APP_DIR = sys.path[0] or os.path.dirname(
     os.path.realpath(sys.argv[0])) or os.getcwd()
