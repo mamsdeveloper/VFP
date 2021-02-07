@@ -196,7 +196,7 @@ class FileChangeScreen():
     def save_file(self, instance):
         """Forming and validate data, create statement xls file."""
         self.update_values()
-        data = self.settings
+        data = self.settings.copy()
 
         results = {}
         for student in reversed(self.write_area.children[0].children):
@@ -312,6 +312,7 @@ class CreateScreen(ParentScreen, FileChangeScreen):
         Update activated/disactivate checkboxes lists 
         when press on CB press.
         """
+        print(self.settings)
         if instance.children[1].active:
             self.settings['exercises'].update(
                 {instance.text: instance.standards})
