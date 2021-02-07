@@ -214,7 +214,6 @@ class FileChangeScreen():
             if not data[key]:
                 data.pop(key)
 
-        print(data.keys())
         if len(data) < 8:
             Snackbar('Заполните все поля').show()
         elif len(self.settings['exercises']) > 3:
@@ -312,7 +311,6 @@ class CreateScreen(ParentScreen, FileChangeScreen):
         Update activated/disactivate checkboxes lists 
         when press on CB press.
         """
-        print(self.settings)
         if instance.children[1].active:
             self.settings['exercises'].update(
                 {instance.text: instance.standards})
